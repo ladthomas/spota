@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../../contexts/AppContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const categories = [
   { label: 'Tout', color: '#FFD36F' },
@@ -14,6 +15,7 @@ const categories = [
 export default function DiscoverScreen() {
   const [selectedCat, setSelectedCat] = useState('Tout');
   const { evenements, favoris, ajouterFavori, retirerFavori } = useAppContext();
+  const { theme, colors } = useTheme();
 
   const filtrés = selectedCat === 'Tout' 
     ? evenements 
@@ -32,18 +34,30 @@ export default function DiscoverScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Découvrir</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.header, { color: colors.text }]}>Découvrir</Text>
       
       {/* Filtres */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtres}>
-        {categories.map(cat => (
+        {categories.map((cat) => (
           <TouchableOpacity
             key={cat.label}
-            style={[styles.filtreBtn, { backgroundColor: selectedCat === cat.label ? cat.color : '#23202a' }]}
+            style={[
+              styles.filtreBtn,
+              { 
+                backgroundColor: selectedCat === cat.label ? cat.color : colors.surface,
+              }
+            ]}
             onPress={() => setSelectedCat(cat.label)}
           >
-            <Text style={[styles.filtreText, { color: selectedCat === cat.label ? '#18171c' : '#fff' }]}>{cat.label}</Text>
+            <Text style={[
+              styles.filtreText,
+              { 
+                color: selectedCat === cat.label ? '#000' : colors.text,
+              }
+            ]}>
+              {cat.label}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -54,13 +68,13 @@ export default function DiscoverScreen() {
         contentContainerStyle={{ paddingBottom: 30 }}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.card}
+            style={[styles.card, { backgroundColor: colors.surface }]}
             onPress={() => navigateToEventDetail(item.id)}
             activeOpacity={0.7}
           >
             <View style={{ flex: 1 }}>
-              <Text style={styles.titre}>{item.titre}</Text>
-              <Text style={styles.lieu}>{item.lieu} • {item.date}</Text>
+              <Text style={[styles.titre, { color: colors.text }]}>{item.titre}</Text>
+              <Text style={[styles.lieu, { color: colors.textSecondary }]}>{item.lieu} • {item.date}</Text>
               <Text style={styles.prix}>{item.prix}</Text>
             </View>
             <View style={styles.actions}>
@@ -92,12 +106,10 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#18171c',
     paddingTop: 60,
     paddingHorizontal: 0,
   },
   header: {
-    color: '#fff',
     fontSize: 32,
     fontWeight: 'bold',
     marginLeft: 24,
@@ -120,7 +132,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   card: {
-    backgroundColor: '#23202a',
     borderRadius: 18,
     marginHorizontal: 16,
     marginVertical: 8,
@@ -133,13 +144,11 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   titre: {
-    color: '#fff',
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   lieu: {
-    color: '#b0b0b0',
     fontSize: 15,
     marginBottom: 2,
   },

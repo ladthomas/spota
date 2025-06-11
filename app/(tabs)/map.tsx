@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Dimensions,
+  Image,
   PanResponder,
   ScrollView,
   StyleSheet,
@@ -14,65 +15,80 @@ import {
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useAppContext } from '../../contexts/AppContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
-// Fake data d'événements avec coordonnées Paris
-const fakeEventsWithCoords = [
+// Fake data d'événements avec coordonnées Paris et images - TOUS les événements
+const allEventsWithCoords = [
   {
     id: '1',
-    titre: 'Concert Jazz au Sunset',
-    lieu: 'Sunset Sunside',
-    date: 'Ce soir, 20h30',
-    prix: '25€',
-    categorie: 'Musique',
-    latitude: 48.8566,
-    longitude: 2.3522,
+    titre: 'Shibari & Tantra',
+    lieu: 'Studio Parisien',
+    date: '+1 de plus',
+    prix: 'Gratuit',
+    categorie: 'Art',
+    latitude: 48.8366,
+    longitude: 2.3222,
+    image: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=300&h=200&fit=crop&crop=center',
+    description: 'Atelier découverte art corporel',
   },
   {
     id: '2',
-    titre: 'Exposition Picasso',
-    lieu: 'Musée Picasso',
-    date: 'Jusqu\'au 15 mars',
-    prix: '16€',
-    categorie: 'Art',
-    latitude: 48.8596,
-    longitude: 2.3626,
+    titre: 'POLARNY',
+    lieu: 'Salle Wagram',
+    date: 'Ce soir, 20h30',
+    prix: '25€',
+    categorie: 'Musique',
+    latitude: 48.8796,
+    longitude: 2.3526,
+    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=200&fit=crop&crop=center',
+    description: 'Concert électro ambient',
   },
   {
     id: '3',
-    titre: 'Marché aux Puces',
-    lieu: 'Saint-Ouen',
-    date: 'Week-end, 9h-18h',
-    prix: 'Gratuit',
-    categorie: 'Découverte',
-    latitude: 48.9014,
-    longitude: 2.3317,
+    titre: 'Be Théo',
+    lieu: 'Café des Arts',
+    date: 'Demain, 18h00',
+    prix: '15€',
+    categorie: 'Art',
+    latitude: 48.8666,
+    longitude: 2.3412,
+    image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&h=200&fit=crop&crop=center',
+    description: 'Performance artistique',
   },
   {
     id: '4',
-    titre: 'Balade Seine',
-    lieu: 'Pont Neuf',
-    date: 'Demain, 14h00',
-    prix: 'Gratuit',
-    categorie: 'Découverte',
-    latitude: 48.8566,
-    longitude: 2.3412,
+    titre: 'Rituel Guérisseur d\'Agni',
+    lieu: 'Centre Holistique',
+    date: '+2 de plus',
+    prix: '30€',
+    categorie: 'Bien-être',
+    latitude: 48.8166,
+    longitude: 2.3012,
+    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=200&fit=crop&crop=center',
+    description: 'Cérémonie de guérison par le feu',
   },
   {
     id: '5',
-    titre: 'Club de Danse',
-    lieu: 'Studio Harmonic',
-    date: 'Mardi, 19h00',
-    prix: '15€',
-    categorie: 'Sport',
-    latitude: 48.8738,
-    longitude: 2.3448,
+    titre: 'Thalya Fundraising Celebration Party',
+    lieu: 'Rooftop Montparnasse',
+    date: '+3 de plus',
+    prix: '20€',
+    categorie: 'Social',
+    latitude: 48.8866,
+    longitude: 2.3512,
+    image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300&h=200&fit=crop&crop=center',
+    description: 'Soirée caritative avec vue panoramique',
   },
 ];
 
+// Événements affichés sur la carte (réduit pour une meilleure visibilité)
+const fakeEventsWithCoords = allEventsWithCoords.slice(0, 3);
+
 export default function MapScreen() {
   const { favoris, ajouterFavori, retirerFavori } = useAppContext();
+  const { theme, colors } = useTheme();
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [showEvents, setShowEvents] = useState(false);
@@ -124,17 +140,17 @@ export default function MapScreen() {
             {
               text: 'Autoriser',
               onPress: async () => {
-                                 const { status } = await Location.requestForegroundPermissionsAsync();
-                 setLocationPermission(status);
-                 if (status === 'granted') {
-                   getCurrentLocation();
-                 } else {
-                   Alert.alert(
-                     'Permission refusée',
-                     'Vous pouvez toujours voir les événements sur la carte, mais nous ne pourrons pas vous localiser.',
-                     [{ text: 'OK' }]
-                   );
-                 }
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                setLocationPermission(status);
+                if (status === 'granted') {
+                  getCurrentLocation();
+                } else {
+                  Alert.alert(
+                    'Permission refusée',
+                    'Vous pouvez toujours voir les événements sur la carte, mais nous ne pourrons pas vous localiser.',
+                    [{ text: 'OK' }]
+                  );
+                }
               }
             }
           ]
@@ -192,215 +208,200 @@ export default function MapScreen() {
     }
   };
 
-  // Générer les marqueurs pour Google Maps
-  const generateMarkers = () => {
-    return fakeEventsWithCoords.map((event, index) => {
-      return `
-        var marker${index} = new google.maps.Marker({
-          position: { lat: ${event.latitude}, lng: ${event.longitude} },
-          map: map,
-          title: "${event.titre}",
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 8,
-            fillColor: "${getMarkerColor(event.categorie)}",
-            fillOpacity: 1,
-            strokeColor: "#ffffff",
-            strokeWeight: 2
-          }
-        });
-        
-        marker${index}.addListener('click', function() {
-          window.ReactNativeWebView.postMessage('${event.id}');
-        });
-      `;
-    }).join('\n');
+  // Génération du HTML pour la carte avec style adapté au thème
+  const generateHTML = () => {
+    const isDark = theme === 'dark';
+    const mapStyle = isDark ? 
+      // Style sombre pour Google Maps
+      `[
+        { "elementType": "geometry", "stylers": [{ "color": "#212121" }] },
+        { "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
+        { "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
+        { "elementType": "labels.text.stroke", "stylers": [{ "color": "#212121" }] },
+        { "featureType": "administrative", "elementType": "geometry", "stylers": [{ "color": "#757575" }] },
+        { "featureType": "administrative.country", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] },
+        { "featureType": "administrative.land_parcel", "stylers": [{ "visibility": "off" }] },
+        { "featureType": "administrative.locality", "elementType": "labels.text.fill", "stylers": [{ "color": "#bdbdbd" }] },
+        { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
+        { "featureType": "poi.park", "elementType": "geometry", "stylers": [{ "color": "#181818" }] },
+        { "featureType": "poi.park", "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
+        { "featureType": "poi.park", "elementType": "labels.text.stroke", "stylers": [{ "color": "#1b1b1b" }] },
+        { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#2c2c2c" }] },
+        { "featureType": "road", "elementType": "labels.text.fill", "stylers": [{ "color": "#8a8a8a" }] },
+        { "featureType": "road.arterial", "elementType": "geometry", "stylers": [{ "color": "#373737" }] },
+        { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#3c3c3c" }] },
+        { "featureType": "road.highway.controlled_access", "elementType": "geometry", "stylers": [{ "color": "#4e4e4e" }] },
+        { "featureType": "road.local", "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
+        { "featureType": "transit", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
+        { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#000000" }] },
+        { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#3d3d3d" }] }
+      ]` : 
+      // Style clair par défaut
+      `[]`;
+
+    const markers = fakeEventsWithCoords.map(event => `
+      L.marker([${event.latitude}, ${event.longitude}], {
+        icon: L.divIcon({
+          className: 'custom-marker',
+          html: '<div style="background-color: ${getMarkerColor(event.categorie)}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
+          iconSize: [26, 26],
+          iconAnchor: [13, 13]
+        })
+      }).addTo(map).on('click', function() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'markerClick',
+          eventId: '${event.id}'
+        }));
+      });
+    `).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+          <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+          <style>
+            body, html { margin: 0; padding: 0; height: 100%; }
+            #map { height: 100vh; }
+            .custom-marker { border: none; background: none; }
+          </style>
+        </head>
+        <body>
+          <div id="map"></div>
+          <script>
+            var map = L.map('map').setView([48.8566, 2.3522], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            ${markers}
+          </script>
+        </body>
+      </html>
+    `;
   };
 
-  const mapHTML = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body { margin: 0; padding: 0; }
-        #map { height: 100vh; width: 100%; }
-      </style>
-    </head>
-    <body>
-      <div id="map"></div>
-      <script>
-        function initMap() {
-          var center = {lat: 48.8566, lng: 2.3522};
-          var map = new google.maps.Map(document.getElementById('map'), {
-            zoom: 13,
-            center: center,
-            styles: [
-              {
-                "elementType": "geometry",
-                "stylers": [{"color": "#212121"}]
-              },
-              {
-                "elementType": "labels.icon",
-                "stylers": [{"visibility": "off"}]
-              },
-              {
-                "elementType": "labels.text.fill",
-                "stylers": [{"color": "#757575"}]
-              },
-              {
-                "elementType": "labels.text.stroke",
-                "stylers": [{"color": "#212121"}]
-              },
-              {
-                "featureType": "administrative",
-                "elementType": "geometry",
-                "stylers": [{"color": "#757575"}]
-              },
-              {
-                "featureType": "road",
-                "elementType": "geometry.fill",
-                "stylers": [{"color": "#2c2c2c"}]
-              },
-              {
-                "featureType": "water",
-                "elementType": "geometry",
-                "stylers": [{"color": "#000000"}]
-              }
-            ]
-          });
-
-          ${generateMarkers()}
-        }
-      </script>
-      <script async defer 
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8KbVqEXAJErTOTFi88bocySJOl5OeVEs&callback=initMap">
-      </script>
-    </body>
-    </html>
-  `;
-
   return (
-    <View style={styles.container} {...panResponder.panHandlers}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.headerTitle}>Carte des événements</Text>
-            <Text style={styles.headerSubtitle}>Découvrez les sorties près de vous</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Button de géolocalisation */}
+      <TouchableOpacity 
+        style={[styles.locationButton, { backgroundColor: colors.surface }]}
+        onPress={getCurrentLocation}
+      >
+        <Ionicons name="locate" size={20} color={colors.text} />
+      </TouchableOpacity>
+
+      {/* Carte */}
+      <View style={styles.mapContainer}>
+        <WebView
+          source={{ html: generateHTML() }}
+          style={styles.map}
+          onMessage={(event) => {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (data.type === 'markerClick') {
+              setSelectedEvent(data.eventId);
+            }
+          }}
+        />
+        
+        {/* Popup d'événement sélectionné */}
+        {selectedEvent && (
+          <View style={[styles.eventPopup, { backgroundColor: colors.surface }]}>
+            {(() => {
+              const event = allEventsWithCoords.find(e => e.id === selectedEvent);
+              return event ? (
+                <>
+                  <TouchableOpacity 
+                    style={styles.closeButton}
+                    onPress={() => setSelectedEvent(null)}
+                  >
+                    <Ionicons name="close" size={20} color={colors.text} />
+                  </TouchableOpacity>
+                  <Image source={{ uri: event.image }} style={styles.eventPopupImage} />
+                  <View style={styles.eventPopupContent}>
+                    <Text style={[styles.eventPopupTitle, { color: colors.text }]}>{event.titre}</Text>
+                    <Text style={[styles.eventPopupLocation, { color: colors.textSecondary }]}>{event.lieu}</Text>
+                    <Text style={[styles.eventPopupDate, { color: colors.textSecondary }]}>{event.date}</Text>
+                    <Text style={styles.eventPopupPrice}>{event.prix}</Text>
+                    <View style={styles.eventPopupActions}>
+                      <TouchableOpacity 
+                        style={styles.favoriteButton}
+                        onPress={() => toggleFavori(event.id)}
+                      >
+                        <Ionicons 
+                          name={favoris.includes(event.id) ? 'heart' : 'heart-outline'} 
+                          size={20} 
+                          color="#FFD36F" 
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.detailButton, { backgroundColor: colors.primary }]}
+                        onPress={() => navigateToEventDetail(event.id)}
+                      >
+                        <Text style={styles.detailButtonText}>Voir détails</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </>
+              ) : null;
+            })()}
           </View>
-          <TouchableOpacity 
-            style={[styles.toggleButton, showEvents && styles.toggleButtonActive]}
-            onPress={() => setShowEvents(!showEvents)}
-          >
-            <Ionicons 
-              name={showEvents ? "map" : "list"} 
-              size={20} 
-              color={showEvents ? "#18171c" : "#fff"} 
-            />
-            <Text style={[styles.toggleButtonText, showEvents && styles.toggleButtonTextActive]}>
-              {showEvents ? "Carte" : "Liste"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        )}
       </View>
 
-      {!showEvents ? (
-        /* Map */
-        <View style={styles.mapContainer}>
-          <WebView
-            style={styles.webview}
-            source={{ html: mapHTML }}
-            onMessage={(event) => {
-              const eventId = event.nativeEvent.data;
-              setSelectedEvent(eventId);
-              setShowEvents(true); // Passer en mode liste quand on clique sur un marqueur
-            }}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-          />
-
-          {/* Location button */}
-          <TouchableOpacity 
-            style={[
-              styles.locationButton,
-              locationPermission === 'granted' && styles.locationButtonActive
-            ]}
-            onPress={getLocationPermission}
-          >
-            <Ionicons 
-              name={locationPermission === 'granted' ? "locate" : "location-outline"} 
-              size={24} 
-              color="#fff" 
-            />
-          </TouchableOpacity>
-
-          {/* Bottom preview */}
-          <View style={styles.bottomPreview}>
-            <TouchableOpacity 
-              style={styles.previewButton}
-              onPress={() => setShowEvents(true)}
-            >
-              <Text style={styles.previewText}>
-                {fakeEventsWithCoords.length} événements à proximité
-              </Text>
-              <Ionicons name="chevron-up" size={20} color="#7f7fff" />
-            </TouchableOpacity>
-            <View style={styles.swipeIndicator}>
-              <Text style={styles.swipeText}>Glissez vers le haut pour voir plus</Text>
-            </View>
-          </View>
+      {/* Section des événements en bas */}
+      <View style={[styles.bottomEventsContainer, { backgroundColor: colors.surface }]} {...panResponder.panHandlers}>
+        <View style={styles.bottomEventsHandle}>
+          <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
         </View>
-      ) : (
-        /* Events List */
-        <View style={styles.eventsContainer}>
-          <Text style={styles.eventsTitle}>Événements à proximité</Text>
+        <TouchableOpacity
+          style={styles.bottomEventsToggle}
+          onPress={() => setShowEvents(!showEvents)}
+        >
+          <Text style={[styles.bottomEventsText, { color: colors.text }]}>
+            {allEventsWithCoords.length} Événements
+          </Text>
+          <Ionicons name={showEvents ? "chevron-down" : "chevron-up"} size={20} color={colors.text} />
+        </TouchableOpacity>
+        
+        {showEvents && (
           <ScrollView 
+            style={styles.bottomEventsList}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.eventsListVertical}
           >
-            {fakeEventsWithCoords.map((event) => (
+            {allEventsWithCoords.map((event) => (
               <TouchableOpacity
                 key={event.id}
-                style={[
-                  styles.eventCardVertical,
-                  selectedEvent === event.id && styles.selectedEventCard
-                ]}
-                onPress={() => setSelectedEvent(event.id)}
+                style={[styles.bottomEventCard, { backgroundColor: colors.background, borderColor: colors.border }]}
+                onPress={() => navigateToEventDetail(event.id)}
               >
-                <View style={styles.eventHeader}>
-                  <View style={[styles.categoryDot, { backgroundColor: getMarkerColor(event.categorie) }]} />
-                  <TouchableOpacity
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      toggleFavori(event.id);
-                    }}
-                  >
-                    <Ionicons 
-                      name={favoris.includes(event.id) ? 'heart' : 'heart-outline'} 
-                      size={20} 
-                      color="#FFD36F" 
-                    />
-                  </TouchableOpacity>
+                <Image
+                  source={{ uri: event.image }}
+                  style={styles.bottomEventImage}
+                />
+                <View style={styles.bottomEventInfo}>
+                  <Text style={[styles.bottomEventTitle, { color: colors.text }]}>{event.titre}</Text>
+                  <Text style={[styles.bottomEventDate, { color: colors.textSecondary }]}>{event.date}</Text>
+                  <Text style={styles.bottomEventPrice}>{event.prix}</Text>
                 </View>
-                
-                <Text style={styles.eventTitle}>{event.titre}</Text>
-                <Text style={styles.eventLocation}>{event.lieu}</Text>
-                <Text style={styles.eventTime}>{event.date}</Text>
-                <Text style={styles.eventPrice}>{event.prix}</Text>
-                
                 <TouchableOpacity
-                  style={styles.detailsButton}
-                  onPress={() => navigateToEventDetail(event.id)}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    toggleFavori(event.id);
+                  }}
                 >
-                  <Text style={styles.detailsButtonText}>Voir détails</Text>
-                  <Ionicons name="arrow-forward" size={16} color="#7f7fff" />
+                  <Ionicons 
+                    name={favoris.includes(event.id) ? 'heart' : 'heart-outline'} 
+                    size={20} 
+                    color="#FFD36F" 
+                  />
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </View>
-      )}
+        )}
+      </View>
     </View>
   );
 }
@@ -408,248 +409,154 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#18171c',
-  },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: '#18171c',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 211, 111, 0.1)',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: '800',
-    marginBottom: 8,
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    color: '#a0a0a0',
-    fontSize: 16,
-    fontWeight: '400',
-  },
-  mapContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  webview: {
-    flex: 1,
   },
   locationButton: {
     position: 'absolute',
-    top: 20,
+    top: 50,
     right: 20,
-    backgroundColor: '#7f7fff',
+    padding: 12,
     borderRadius: 25,
-    width: 52,
-    height: 52,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#7f7fff',
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  locationButtonActive: {
-    backgroundColor: '#FFD36F',
-    shadowColor: '#FFD36F',
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  bottomSheet: {
-    backgroundColor: '#18171c',
-    paddingVertical: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: 250,
-  },
-  bottomSheetTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    paddingHorizontal: 20,
-  },
-  eventsList: {
-    paddingLeft: 20,
-    paddingRight: 10,
-  },
-  eventCard: {
-    width: 200,
-    backgroundColor: '#23202a',
-    borderRadius: 20,
-    padding: 18,
-    marginRight: 15,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    zIndex: 1000,
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
-    shadowRadius: 10,
+    shadowRadius: 3.84,
     elevation: 5,
   },
-  selectedEventCard: {
-    borderColor: '#FFD36F',
-    backgroundColor: '#2a2730',
-    shadowColor: '#FFD36F',
-    shadowOpacity: 0.3,
+  mapContainer: {
+    flex: 1,
   },
-  eventHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  map: {
+    flex: 1,
+  },
+  eventPopup: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    padding: 10,
+  },
+  eventPopupImage: {
+    width: '80%',
+    height: '80%',
+    borderRadius: 10,
+  },
+  eventPopupContent: {
+    padding: 20,
+    borderRadius: 10,
+    maxWidth: '80%',
+    maxHeight: '80%',
+    justifyContent: 'center',
+  },
+  eventPopupTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
     marginBottom: 10,
   },
-  categoryDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  eventTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-    lineHeight: 22,
-  },
-  eventLocation: {
-    color: '#a0a0a0',
+  eventPopupLocation: {
     fontSize: 14,
-    marginBottom: 4,
-    fontWeight: '500',
+    marginBottom: 10,
   },
-  eventTime: {
-    color: '#a0a0a0',
+  eventPopupDate: {
     fontSize: 14,
-    marginBottom: 8,
-    fontWeight: '500',
   },
-  eventPrice: {
+  eventPopupPrice: {
     color: '#FFD36F',
-    fontWeight: '800',
-    fontSize: 16,
-    marginBottom: 15,
-  },
-  detailsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(127, 127, 255, 0.15)',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderWidth: 1.5,
-    borderColor: '#7f7fff',
-    shadowColor: '#7f7fff',
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  detailsButtonText: {
-    color: '#7f7fff',
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: 'bold',
+    marginTop: 10,
   },
-  headerContent: {
+  eventPopupActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 10,
   },
-  toggleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(127, 127, 255, 0.15)',
-    borderRadius: 25,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderWidth: 1.5,
-    borderColor: '#7f7fff',
-    shadowColor: '#7f7fff',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
+  favoriteButton: {
+    padding: 10,
+    borderRadius: 20,
   },
-  toggleButtonActive: {
-    backgroundColor: '#FFD36F',
-    borderColor: '#FFD36F',
-    shadowColor: '#FFD36F',
-    shadowOpacity: 0.3,
+  detailButton: {
+    padding: 10,
+    borderRadius: 20,
   },
-  toggleButtonText: {
-    color: '#7f7fff',
+  detailButtonText: {
     fontSize: 14,
-    fontWeight: '700',
-    marginLeft: 8,
+    fontWeight: 'bold',
   },
-  toggleButtonTextActive: {
-    color: '#18171c',
-  },
-  bottomPreview: {
+  bottomEventsContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#18171c',
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
-    paddingVertical: 18,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 211, 111, 0.1)',
+    maxHeight: height * 0.9,
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.3,
-    shadowRadius: 10,
+    shadowRadius: 8,
     elevation: 10,
   },
-  previewButton: {
+  bottomEventsHandle: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+  },
+  bottomEventsToggle: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-  },
-  previewText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  eventsContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  eventsTitle: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '800',
-    marginBottom: 20,
-    marginTop: 10,
-  },
-  eventsListVertical: {
-    paddingBottom: 100,
-  },
-  eventCardVertical: {
-    backgroundColor: '#23202a',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  swipeIndicator: {
     alignItems: 'center',
-    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
   },
-  swipeText: {
-    color: '#7f7fff',
-    fontSize: 12,
-    fontStyle: 'italic',
+  bottomEventsText: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  bottomEventsList: {
+    maxHeight: height * 0.7,
+  },
+  bottomEventCard: {
+    flexDirection: 'row',
+    padding: 15,
+    borderBottomWidth: 1,
+    alignItems: 'center',
+  },
+  bottomEventImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    marginRight: 15,
+  },
+  bottomEventInfo: {
+    flex: 1,
+  },
+  bottomEventTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  bottomEventDate: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  bottomEventPrice: {
+    color: '#FFD36F',
+    fontSize: 14,
+    fontWeight: '600',
   },
 }); 

@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'react-native';
 import 'react-native-reanimated';
 import { AppProvider } from '../contexts/AppContext';
+import { ThemeProvider as CustomThemeProvider } from '../contexts/ThemeContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -18,42 +19,27 @@ export default function RootLayout() {
   }
 
   return (
-    <AppProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
-            },
-            headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-            },
-          }}
-        >
-          <Stack.Screen
-            name="(tabs)"
-            options={{
+    <CustomThemeProvider>
+      <AppProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack
+            screenOptions={{
               headerShown: false,
             }}
-          />
-          <Stack.Screen
-            name="login"
-            options={{
-              title: 'Connexion',
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
-            name="register"
-            options={{
-              title: 'Inscription',
-              headerShown: false,
-            }}
-          />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </AppProvider>
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="login" />
+            <Stack.Screen name="register" />
+            <Stack.Screen name="event/[id]" />
+            <Stack.Screen name="settings/account" />
+            <Stack.Screen name="settings/payment" />
+            <Stack.Screen name="settings/notifications" />
+            <Stack.Screen name="settings/appearance" />
+            <Stack.Screen name="settings" />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </AppProvider>
+    </CustomThemeProvider>
   );
 }

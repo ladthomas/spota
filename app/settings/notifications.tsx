@@ -3,129 +3,132 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../contexts/ThemeContext';
 
-export default function NotificationsScreen() {
+export default function NotificationsSettingsScreen() {
   const router = useRouter();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [eventUpdatesEnabled, setEventUpdatesEnabled] = useState(true);
-  const [discoverSuggestionsEnabled, setDiscoverSuggestionsEnabled] = useState(true);
-  const [messageNotificationsEnabled, setMessageNotificationsEnabled] = useState(true);
-  const [announcementsEnabled, setAnnouncementsEnabled] = useState(false);
-  const [emailDigestEnabled, setEmailDigestEnabled] = useState(true);
+  const { theme, colors } = useTheme();
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(false);
+  const [eventReminders, setEventReminders] = useState(true);
+  const [newEventAlerts, setNewEventAlerts] = useState(true);
+  const [socialNotifications, setSocialNotifications] = useState(false);
 
   const navigateBack = () => {
     router.back();
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={navigateBack} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color="#fff" />
+          <Ionicons name="chevron-back" size={28} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ flex: 1 }} />
       </View>
 
       <ScrollView style={styles.scrollView}>
-        {/* Push Notifications */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications push</Text>
+        {/* Notifications Push */}
+        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionSubTitle, { color: colors.text }]}>Notifications Push</Text>
           
-          <View style={styles.setting}>
-            <View>
-              <Text style={styles.settingTitle}>Toutes les notifications</Text>
-              <Text style={styles.settingDescription}>Activer/désactiver toutes les notifications</Text>
+          <View style={styles.notificationItem}>
+            <View style={styles.notificationInfo}>
+              <Text style={[styles.notificationTitle, { color: colors.text }]}>Notifications générales</Text>
+              <Text style={[styles.notificationDescription, { color: colors.textSecondary }]}>
+                Recevez les notifications importantes de l'application
+              </Text>
             </View>
             <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              trackColor={{ false: '#3e3e3e', true: '#6c58f5' }}
-              thumbColor="#fff"
+              value={pushNotifications}
+              onValueChange={setPushNotifications}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={pushNotifications ? '#fff' : '#f4f3f4'}
             />
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          <View style={styles.setting}>
-            <View>
-              <Text style={styles.settingTitle}>Mises à jour d'événements</Text>
-              <Text style={styles.settingDescription}>Changements de lieu, date ou annulations</Text>
+          <View style={styles.notificationItem}>
+            <View style={styles.notificationInfo}>
+              <Text style={[styles.notificationTitle, { color: colors.text }]}>Rappels d'événements</Text>
+              <Text style={[styles.notificationDescription, { color: colors.textSecondary }]}>
+                Soyez notifié avant le début de vos événements favoris
+              </Text>
             </View>
             <Switch
-              value={eventUpdatesEnabled}
-              onValueChange={setEventUpdatesEnabled}
-              trackColor={{ false: '#3e3e3e', true: '#6c58f5' }}
-              thumbColor="#fff"
+              value={eventReminders}
+              onValueChange={setEventReminders}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={eventReminders ? '#fff' : '#f4f3f4'}
             />
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          <View style={styles.setting}>
-            <View>
-              <Text style={styles.settingTitle}>Suggestions Découvrir</Text>
-              <Text style={styles.settingDescription}>Nouvelles expériences qui pourraient vous intéresser</Text>
+          <View style={styles.notificationItem}>
+            <View style={styles.notificationInfo}>
+              <Text style={[styles.notificationTitle, { color: colors.text }]}>Nouveaux événements</Text>
+              <Text style={[styles.notificationDescription, { color: colors.textSecondary }]}>
+                Découvrez les nouveaux événements dans vos catégories préférées
+              </Text>
             </View>
             <Switch
-              value={discoverSuggestionsEnabled}
-              onValueChange={setDiscoverSuggestionsEnabled}
-              trackColor={{ false: '#3e3e3e', true: '#6c58f5' }}
-              thumbColor="#fff"
-            />
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.setting}>
-            <View>
-              <Text style={styles.settingTitle}>Messages</Text>
-              <Text style={styles.settingDescription}>Nouveaux messages des créateurs d'événements</Text>
-            </View>
-            <Switch
-              value={messageNotificationsEnabled}
-              onValueChange={setMessageNotificationsEnabled}
-              trackColor={{ false: '#3e3e3e', true: '#6c58f5' }}
-              thumbColor="#fff"
-            />
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.setting}>
-            <View>
-              <Text style={styles.settingTitle}>Annonces Spota</Text>
-              <Text style={styles.settingDescription}>Actualités, fonctionnalités et mises à jour</Text>
-            </View>
-            <Switch
-              value={announcementsEnabled}
-              onValueChange={setAnnouncementsEnabled}
-              trackColor={{ false: '#3e3e3e', true: '#6c58f5' }}
-              thumbColor="#fff"
+              value={newEventAlerts}
+              onValueChange={setNewEventAlerts}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={newEventAlerts ? '#fff' : '#f4f3f4'}
             />
           </View>
         </View>
 
-        {/* Email Notifications */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications par email</Text>
+        {/* Notifications Email */}
+        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionSubTitle, { color: colors.text }]}>Notifications Email</Text>
           
-          <View style={styles.setting}>
-            <View>
-              <Text style={styles.settingTitle}>Résumé hebdomadaire</Text>
-              <Text style={styles.settingDescription}>Événements et activités à venir</Text>
+          <View style={styles.notificationItem}>
+            <View style={styles.notificationInfo}>
+              <Text style={[styles.notificationTitle, { color: colors.text }]}>Résumé hebdomadaire</Text>
+              <Text style={[styles.notificationDescription, { color: colors.textSecondary }]}>
+                Recevez un résumé des événements de la semaine par email
+              </Text>
             </View>
             <Switch
-              value={emailDigestEnabled}
-              onValueChange={setEmailDigestEnabled}
-              trackColor={{ false: '#3e3e3e', true: '#6c58f5' }}
-              thumbColor="#fff"
+              value={emailNotifications}
+              onValueChange={setEmailNotifications}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={emailNotifications ? '#fff' : '#f4f3f4'}
             />
           </View>
         </View>
+
+        {/* Notifications Sociales */}
+        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionSubTitle, { color: colors.text }]}>Notifications Sociales</Text>
+          
+          <View style={styles.notificationItem}>
+            <View style={styles.notificationInfo}>
+              <Text style={[styles.notificationTitle, { color: colors.text }]}>Activité sociale</Text>
+              <Text style={[styles.notificationDescription, { color: colors.textSecondary }]}>
+                Notifications quand vos amis participent à des événements
+              </Text>
+            </View>
+            <Switch
+              value={socialNotifications}
+              onValueChange={setSocialNotifications}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={socialNotifications ? '#fff' : '#f4f3f4'}
+            />
+          </View>
+        </View>
+
+        <Text style={[styles.disclaimer, { color: colors.textSecondary }]}>
+          Vous pouvez modifier ces paramètres à tout moment. 
+          Certaines notifications importantes ne peuvent pas être désactivées.
+        </Text>
       </ScrollView>
     </View>
   );
@@ -134,7 +137,6 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#18171c',
   },
   header: {
     flexDirection: 'row',
@@ -143,15 +145,9 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#18171c',
   },
   backButton: {
     padding: 5,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#fff',
   },
   scrollView: {
     flex: 1,
@@ -159,36 +155,39 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 30,
-    backgroundColor: '#26252e',
     borderRadius: 16,
     padding: 20,
     marginTop: 10,
   },
-  sectionTitle: {
+  sectionSubTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
     marginBottom: 20,
   },
-  setting: {
+  notificationItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
   },
-  settingTitle: {
+  notificationInfo: {
+    flexDirection: 'column',
+  },
+  notificationTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#fff',
     marginBottom: 5,
   },
-  settingDescription: {
+  notificationDescription: {
     fontSize: 14,
-    color: '#9e9e9e',
     maxWidth: '85%',
   },
   divider: {
     height: 1,
-    backgroundColor: '#333',
+  },
+  disclaimer: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 20,
   },
 }); 

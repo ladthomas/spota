@@ -1,17 +1,21 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function TabsLayout() {
   const colorScheme = useColorScheme();
+  const { theme, colors } = useTheme();
+  
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: '#FFD36F',
-        tabBarInactiveTintColor: '#fff',
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: '#18171c',
-          borderTopWidth: 0,
+          backgroundColor: colors.surface,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
           height: 60,
         },
         tabBarShowLabel: false,
@@ -42,14 +46,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="add"
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle" color={color} size={32} />
-          ),
-        }}
-      />
+
       <Tabs.Screen
         name="favorites"
         options={{

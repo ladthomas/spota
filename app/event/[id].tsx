@@ -4,11 +4,13 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../../contexts/AppContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { evenements, favoris, ajouterFavori, retirerFavori } = useAppContext();
+  const { theme, colors } = useTheme();
   const [joined, setJoined] = useState(false);
   
   // Trouver l'événement correspondant à l'ID
@@ -17,17 +19,16 @@ export default function EventDetailScreen() {
   // Si l'événement n'est pas trouvé, afficher un message d'erreur
   if (!evenement) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="light" />
-        <View style={styles.header}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar style={theme === 'dark' ? "light" : "dark"} />
+        <View style={[styles.header, { backgroundColor: colors.background }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={28} color="#fff" />
+            <Ionicons name="chevron-back" size={28} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Détails</Text>
-          <View style={{ width: 40 }} />
+          <View style={{ flex: 1 }} />
         </View>
         <View style={styles.notFoundContainer}>
-          <Text style={styles.notFoundText}>Événement non trouvé</Text>
+          <Text style={[styles.notFoundText, { color: colors.text }]}>Événement non trouvé</Text>
           <TouchableOpacity onPress={() => router.back()} style={styles.backToDiscoverButton}>
             <Text style={styles.backToDiscoverText}>Retour à la découverte</Text>
           </TouchableOpacity>
@@ -57,15 +58,15 @@ export default function EventDetailScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={theme === 'dark' ? "light" : "dark"} />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color="#fff" />
+          <Ionicons name="chevron-back" size={28} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{evenement.titre}</Text>
+        <View style={{ flex: 1 }} />
         <TouchableOpacity onPress={toggleFavori} style={styles.favoriteButton}>
           <Ionicons 
             name={favoris.includes(evenement.id) ? 'heart' : 'heart-outline'} 
@@ -77,7 +78,7 @@ export default function EventDetailScreen() {
 
       <ScrollView style={styles.scrollView}>
         {/* Image de l'événement */}
-        <View style={styles.imagePlaceholder}>
+        <View style={[styles.imagePlaceholder, { backgroundColor: colors.surface }]}>
           <Image
             source={{ uri: 'https://picsum.photos/800/500' }}
             style={styles.eventImage}
@@ -89,8 +90,7 @@ export default function EventDetailScreen() {
 
         {/* Titre et info basiques */}
         <View style={styles.titleContainer}>
-          <Text style={styles.mainTitle}>{evenement.titre}</Text>
-          <Text style={styles.dateLabel}>Aujourd'hui, {evenement.date}</Text>
+          <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>Aujourd'hui, {evenement.date}</Text>
         </View>
 
         {/* Actions principales */}
@@ -107,26 +107,26 @@ export default function EventDetailScreen() {
           
           <View style={styles.secondaryActions}>
             <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="mail-outline" size={28} color="#fff" />
+              <Ionicons name="mail-outline" size={28} color={colors.text} />
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="share-social-outline" size={28} color="#fff" />
+              <Ionicons name="share-social-outline" size={28} color={colors.text} />
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="ellipsis-horizontal" size={28} color="#fff" />
+              <Ionicons name="ellipsis-horizontal" size={28} color={colors.text} />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Lieu */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Lieu</Text>
-          <View style={styles.locationCard}>
+        <View style={[styles.section, { borderTopColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Lieu</Text>
+          <View style={[styles.locationCard, { backgroundColor: colors.surface }]}>
             <View style={styles.locationDetails}>
-              <Text style={styles.locationTitle}>{evenement.lieu}</Text>
-              <Text style={styles.locationAddress}>Paris, Île-de-France</Text>
+              <Text style={[styles.locationTitle, { color: colors.text }]}>{evenement.lieu}</Text>
+              <Text style={[styles.locationAddress, { color: colors.textSecondary }]}>Paris, Île-de-France</Text>
               <TouchableOpacity style={styles.directionButton}>
                 <Text style={styles.directionText}>Itinéraire</Text>
                 <Ionicons name="arrow-forward" size={16} color="#7f7fff" />
@@ -142,9 +142,9 @@ export default function EventDetailScreen() {
         </View>
 
         {/* Description */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>À propos de l'événement</Text>
-          <Text style={styles.descriptionText}>
+        <View style={[styles.section, { borderTopColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>À propos de l'événement</Text>
+          <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>
             La French Stack #002 — Code Legacy
 
             Rejoignez-nous pour cette deuxième édition de la French Stack, où nous échangerons sur les bonnes pratiques de développement et la gestion de la dette technique.
@@ -159,8 +159,8 @@ export default function EventDetailScreen() {
         </View>
 
         {/* Prix */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Prix</Text>
+        <View style={[styles.section, { borderTopColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Prix</Text>
           <View style={styles.priceContainer}>
             <Ionicons name="cash-outline" size={22} color="#FFD36F" />
             <Text style={styles.priceLabel}>{evenement.prix}</Text>
@@ -177,7 +177,6 @@ export default function EventDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#18171c',
   },
   header: {
     flexDirection: 'row',
@@ -186,7 +185,6 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#18171c',
   },
   backButton: {
     padding: 5,
@@ -197,7 +195,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
     maxWidth: '70%',
     textAlign: 'center',
   },
@@ -207,7 +204,6 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: '100%',
     height: 250,
-    backgroundColor: '#23202a',
     position: 'relative',
   },
   eventImage: {
@@ -233,15 +229,8 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 10,
   },
-  mainTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
-  },
   dateLabel: {
     fontSize: 18,
-    color: '#b0b0b0',
   },
   mainActionsContainer: {
     flexDirection: 'row',
@@ -282,16 +271,13 @@ const styles = StyleSheet.create({
   section: {
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#333',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 15,
   },
   locationCard: {
-    backgroundColor: '#23202a',
     borderRadius: 12,
     padding: 15,
     flexDirection: 'row',
@@ -300,13 +286,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   locationTitle: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   locationAddress: {
-    color: '#b0b0b0',
     fontSize: 14,
     marginBottom: 12,
   },
@@ -333,7 +317,6 @@ const styles = StyleSheet.create({
   },
   descriptionText: {
     fontSize: 16,
-    color: '#ccc',
     lineHeight: 24,
   },
   priceContainer: {
@@ -355,7 +338,6 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 16,
   },
   infoItem: {
@@ -366,7 +348,6 @@ const styles = StyleSheet.create({
   infoText: {
     marginLeft: 10,
     fontSize: 16,
-    color: '#fff',
   },
   priceText: {
     marginLeft: 10,
@@ -420,7 +401,6 @@ const styles = StyleSheet.create({
   },
   notFoundText: {
     fontSize: 18,
-    color: '#fff',
     marginBottom: 20,
   },
   backToDiscoverButton: {

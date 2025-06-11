@@ -3,9 +3,11 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function PaymentScreen() {
   const router = useRouter();
+  const { theme, colors } = useTheme();
   const [defaultPaymentMethod, setDefaultPaymentMethod] = useState('visa');
 
   const navigateBack = () => {
@@ -18,22 +20,21 @@ export default function PaymentScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={navigateBack} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color="#fff" />
+          <Ionicons name="chevron-back" size={28} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Paiement</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ flex: 1 }} />
       </View>
 
       <ScrollView style={styles.scrollView}>
         {/* Payment Methods */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Méthodes de paiement</Text>
+        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Méthodes de paiement</Text>
           
           <TouchableOpacity style={styles.paymentMethod} onPress={() => setDefaultPaymentMethod('visa')}>
             <View style={styles.paymentMethodInfo}>
@@ -41,18 +42,18 @@ export default function PaymentScreen() {
                 <MaterialCommunityIcons name="credit-card" size={24} color="#fff" />
               </View>
               <View>
-                <Text style={styles.paymentMethodTitle}>Visa •••• 4242</Text>
-                <Text style={styles.paymentMethodDescription}>Expire 12/24</Text>
+                <Text style={[styles.paymentMethodTitle, { color: colors.text }]}>Visa •••• 4242</Text>
+                <Text style={[styles.paymentMethodDescription, { color: colors.textSecondary }]}>Expire 12/24</Text>
               </View>
             </View>
             {defaultPaymentMethod === 'visa' && (
               <View style={styles.defaultBadge}>
-                <Text style={styles.defaultBadgeText}>Par défaut</Text>
+                <Text style={[styles.defaultBadgeText, { color: colors.text }]}>Par défaut</Text>
               </View>
             )}
           </TouchableOpacity>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <TouchableOpacity style={styles.paymentMethod} onPress={() => setDefaultPaymentMethod('mastercard')}>
             <View style={styles.paymentMethodInfo}>
@@ -60,13 +61,13 @@ export default function PaymentScreen() {
                 <MaterialCommunityIcons name="credit-card" size={24} color="#fff" />
               </View>
               <View>
-                <Text style={styles.paymentMethodTitle}>Mastercard •••• 5678</Text>
-                <Text style={styles.paymentMethodDescription}>Expire 08/25</Text>
+                <Text style={[styles.paymentMethodTitle, { color: colors.text }]}>Mastercard •••• 5678</Text>
+                <Text style={[styles.paymentMethodDescription, { color: colors.textSecondary }]}>Expire 08/25</Text>
               </View>
             </View>
             {defaultPaymentMethod === 'mastercard' && (
               <View style={styles.defaultBadge}>
-                <Text style={styles.defaultBadgeText}>Par défaut</Text>
+                <Text style={[styles.defaultBadgeText, { color: colors.text }]}>Par défaut</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -75,49 +76,49 @@ export default function PaymentScreen() {
             style={styles.addPaymentButton}
             onPress={navigateToAddPaymentMethod}
           >
-            <Text style={styles.addPaymentButtonText}>+ Ajouter une méthode de paiement</Text>
+            <Text style={[styles.addPaymentButtonText, { color: colors.text }]}>+ Ajouter une méthode de paiement</Text>
           </TouchableOpacity>
         </View>
 
         {/* Billing Address */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Adresse de facturation</Text>
+        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Adresse de facturation</Text>
           
-          <View style={styles.addressInfo}>
-            <Text style={styles.addressName}>Thomas Ladouy</Text>
-            <Text style={styles.addressLine}>123 Rue de Paris</Text>
-            <Text style={styles.addressLine}>75001 Paris, France</Text>
+          <View style={[styles.addressInfo, { borderColor: colors.border }]}>
+            <Text style={[styles.addressName, { color: colors.text }]}>Thomas Ladouyou</Text>
+            <Text style={[styles.addressLine, { color: colors.textSecondary }]}>123 Rue de Paris</Text>
+            <Text style={[styles.addressLine, { color: colors.textSecondary }]}>75001 Paris, France</Text>
           </View>
 
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editButtonText}>Modifier l'adresse</Text>
+          <TouchableOpacity style={[styles.editButton, { borderColor: colors.border }]}>
+            <Text style={[styles.editButtonText, { color: colors.text }]}>Modifier l'adresse</Text>
           </TouchableOpacity>
         </View>
 
         {/* Payment History */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Historique des paiements</Text>
+        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Historique des paiements</Text>
           
-          <View style={styles.paymentHistoryItem}>
+          <View style={[styles.paymentHistoryItem, { borderColor: colors.border }]}>
             <View>
-              <Text style={styles.paymentHistoryTitle}>Événement: Concert Jazz</Text>
-              <Text style={styles.paymentHistoryDate}>24 juin 2023</Text>
+              <Text style={[styles.paymentHistoryTitle, { color: colors.text }]}>Événement: Concert Jazz</Text>
+              <Text style={[styles.paymentHistoryDate, { color: colors.textSecondary }]}>24 juin 2023</Text>
             </View>
             <Text style={styles.paymentHistoryAmount}>35,00 €</Text>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          <View style={styles.paymentHistoryItem}>
+          <View style={[styles.paymentHistoryItem, { borderColor: colors.border }]}>
             <View>
-              <Text style={styles.paymentHistoryTitle}>Événement: Exposition d'art</Text>
-              <Text style={styles.paymentHistoryDate}>10 mai 2023</Text>
+              <Text style={[styles.paymentHistoryTitle, { color: colors.text }]}>Événement: Exposition d'art</Text>
+              <Text style={[styles.paymentHistoryDate, { color: colors.textSecondary }]}>10 mai 2023</Text>
             </View>
             <Text style={styles.paymentHistoryAmount}>15,50 €</Text>
           </View>
 
-          <TouchableOpacity style={styles.viewAllButton}>
-            <Text style={styles.viewAllButtonText}>Voir tout l'historique</Text>
+          <TouchableOpacity style={[styles.viewAllButton, { borderColor: colors.border }]}>
+            <Text style={[styles.viewAllButtonText, { color: colors.text }]}>Voir tout l'historique</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -128,7 +129,6 @@ export default function PaymentScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#18171c',
   },
   header: {
     flexDirection: 'row',
@@ -137,15 +137,9 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#18171c',
   },
   backButton: {
     padding: 5,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#fff',
   },
   scrollView: {
     flex: 1,
@@ -161,7 +155,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
     marginBottom: 20,
   },
   paymentMethod: {
@@ -186,7 +179,6 @@ const styles = StyleSheet.create({
   paymentMethodTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#fff',
   },
   paymentMethodDescription: {
     fontSize: 14,
@@ -224,7 +216,6 @@ const styles = StyleSheet.create({
   addressName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#fff',
     marginBottom: 5,
   },
   addressLine: {
@@ -249,16 +240,15 @@ const styles = StyleSheet.create({
   paymentHistoryTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#fff',
   },
   paymentHistoryDate: {
     fontSize: 14,
     color: '#9e9e9e',
   },
   paymentHistoryAmount: {
+    color: '#9e9e9e',
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
   },
   viewAllButton: {
     marginTop: 15,

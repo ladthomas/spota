@@ -3,9 +3,11 @@ import { router } from 'expo-router';
 import React from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../../contexts/AppContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function FavoritesScreen() {
   const { evenements, favoris, retirerFavori } = useAppContext();
+  const { theme, colors } = useTheme();
   
   // Filtrer les événements qui sont dans les favoris
   const evenementsFavoris = evenements.filter(ev => favoris.includes(ev.id));
@@ -15,13 +17,13 @@ export default function FavoritesScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Mes Favoris</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.header, { color: colors.text }]}>Mes Favoris</Text>
       {evenementsFavoris.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="heart" size={60} color="#333" />
-          <Text style={styles.emptyText}>Pas encore de favoris</Text>
-          <Text style={styles.emptySubText}>Ajoute des événements en cliquant sur le cœur</Text>
+          <Ionicons name="heart" size={60} color={colors.textSecondary} />
+          <Text style={[styles.emptyText, { color: colors.text }]}>Pas encore de favoris</Text>
+          <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>Ajoute des événements en cliquant sur le cœur</Text>
         </View>
       ) : (
         <FlatList
@@ -29,13 +31,13 @@ export default function FavoritesScreen() {
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
             <TouchableOpacity 
-              style={styles.card}
+              style={[styles.card, { backgroundColor: colors.surface }]}
               onPress={() => navigateToEventDetail(item.id)}
               activeOpacity={0.7}
             >
               <View style={{flex: 1}}>
-                <Text style={styles.titre}>{item.titre}</Text>
-                <Text style={styles.lieu}>{item.lieu} • {item.date}</Text>
+                <Text style={[styles.titre, { color: colors.text }]}>{item.titre}</Text>
+                <Text style={[styles.lieu, { color: colors.textSecondary }]}>{item.lieu} • {item.date}</Text>
                 <Text style={styles.prix}>{item.prix}</Text>
               </View>
               <TouchableOpacity 

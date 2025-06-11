@@ -3,16 +3,17 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-  FlatList,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    FlatList,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useAppContext } from '../../contexts/AppContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const categories = [
  /* { id: 'all', nom: 'Tout', icon: 'grid', color: '#7f7fff' },*/  /* suppresiion du bouton dans la nav categorie */
@@ -27,6 +28,7 @@ const categories = [
 export default function AccueilScreen() {
   const router = useRouter();
   const { evenements, favoris, ajouterFavori, retirerFavori } = useAppContext();
+  const { theme, colors } = useTheme();
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
@@ -50,6 +52,7 @@ export default function AccueilScreen() {
     <TouchableOpacity
       style={[
         styles.categoryCard,
+        { backgroundColor: colors.surface },
         (selectedCategory === item.nom || (item.nom === 'Tout' && selectedCategory === '')) && styles.categoryCardSelected
       ]}
       onPress={() => {
@@ -63,13 +66,13 @@ export default function AccueilScreen() {
       <View style={[styles.categoryIcon, { backgroundColor: item.color }]}>
         <Ionicons name={item.icon} size={24} color="#fff" />
       </View>
-      <Text style={styles.categoryText}>{item.nom}</Text>
+      <Text style={[styles.categoryText, { color: colors.text }]}>{item.nom}</Text>
     </TouchableOpacity>
   );
 
   const renderEvent = ({ item }: { item: any }) => (
     <TouchableOpacity
-      style={styles.eventCard}
+      style={[styles.eventCard, { backgroundColor: colors.surface }]}
       onPress={() => router.push(`/event/${item.id}`)}
     >
       <Image
@@ -88,14 +91,14 @@ export default function AccueilScreen() {
       </TouchableOpacity>
       
       <View style={styles.eventInfo}>
-        <Text style={styles.eventTitle}>{item.titre}</Text>
+        <Text style={[styles.eventTitle, { color: colors.text }]}>{item.titre}</Text>
         <View style={styles.eventDetails}>
-          <Ionicons name="location-outline" size={14} color="#b0b0b0" />
-          <Text style={styles.eventLocation}>{item.lieu}</Text>
+          <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
+          <Text style={[styles.eventLocation, { color: colors.textSecondary }]}>{item.lieu}</Text>
         </View>
         <View style={styles.eventDetails}>
-          <Ionicons name="time-outline" size={14} color="#b0b0b0" />
-          <Text style={styles.eventTime}>{item.date}</Text>
+          <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+          <Text style={[styles.eventTime, { color: colors.textSecondary }]}>{item.date}</Text>
         </View>
         <Text style={styles.eventPrice}>{item.prix}</Text>
       </View>
@@ -103,15 +106,15 @@ export default function AccueilScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <View style={styles.headerTop}>
           <View>
-            <Text style={styles.greeting}>Salut ! 👋</Text>
-            <Text style={styles.subtitle}>Que veux-tu faire aujourd'hui ?</Text>
+            <Text style={[styles.greeting, { color: colors.text }]}>Salut ! 👋</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Que veux-tu faire aujourd'hui ?</Text>
           </View>
           <TouchableOpacity 
             style={styles.profileButton}
@@ -122,18 +125,18 @@ export default function AccueilScreen() {
         </View>
 
         {/* Barre de recherche */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#b0b0b0" style={styles.searchIcon} />
+        <View style={[styles.searchContainer, { backgroundColor: colors.surface }]}>
+          <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder="Rechercher des événements..."
-            placeholderTextColor="#b0b0b0"
+            placeholderTextColor={colors.textSecondary}
             value={searchText}
             onChangeText={setSearchText}
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={() => setSearchText('')}>
-              <Ionicons name="close-circle" size={20} color="#b0b0b0" />
+              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -142,7 +145,7 @@ export default function AccueilScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Catégories */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Catégories</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Catégories</Text>
           <FlatList
             data={categories}
             renderItem={renderCategory}
@@ -164,14 +167,6 @@ export default function AccueilScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.quickActionButton, { backgroundColor: '#ff6f91' }]}
-            onPress={() => router.push('/add')}
-          >
-            <Ionicons name="add-circle" size={24} color="#fff" />
-            <Text style={styles.quickActionText}>Proposer</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
             style={[styles.quickActionButton, { backgroundColor: '#4ecdc4' }]}
             onPress={() => router.push('/favorites')}
           >
@@ -183,7 +178,7 @@ export default function AccueilScreen() {
         {/* Événements recommandés */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
               {selectedCategory ? `Événements ${selectedCategory}` : 'Événements recommandés'}
             </Text>
             <TouchableOpacity onPress={() => router.push('/discover')}>
@@ -201,19 +196,15 @@ export default function AccueilScreen() {
               scrollEnabled={false}
             />
           ) : (
-            <View style={styles.noEventsContainer}>
-              <Ionicons name="calendar-outline" size={48} color="#666" />
-              <Text style={styles.noEventsText}>
-                {searchText || selectedCategory 
-                  ? 'Aucun événement trouvé' 
-                  : 'Aucun événement disponible'
-                }
+            <View style={styles.emptyContainer}>
+              <Ionicons name="calendar-outline" size={60} color={colors.textSecondary} />
+              <Text style={[styles.emptyText, { color: colors.text }]}>Aucun événement trouvé</Text>
+              <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>
+                Essayez avec d'autres mots-clés ou explorez toutes les catégories
               </Text>
             </View>
           )}
         </View>
-
-        <View style={styles.bottomSpace} />
       </ScrollView>
     </View>
   );
@@ -393,17 +384,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 8,
   },
-  noEventsContainer: {
+  emptyContainer: {
     alignItems: 'center',
     paddingVertical: 40,
   },
-  noEventsText: {
+  emptyText: {
     color: '#666',
     fontSize: 16,
     marginTop: 10,
     textAlign: 'center',
   },
-  bottomSpace: {
-    height: 100,
+  emptySubText: {
+    color: '#666',
+    fontSize: 14,
+    marginTop: 10,
+    textAlign: 'center',
   },
 }); 
