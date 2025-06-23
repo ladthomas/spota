@@ -4,7 +4,6 @@ import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-    Alert,
     Dimensions,
     KeyboardAvoidingView,
     Platform,
@@ -15,6 +14,10 @@ import {
     View
 } from 'react-native';
 import AuthGuard from '../components/AuthGuard';
+import PopupManager from '../components/PopupManager';
+import ToastManager from '../components/ToastManager';
+import { usePopup } from '../hooks/usePopup';
+import { useToast } from '../hooks/useToast';
 import authService from '../services/authService';
 
 const { width } = Dimensions.get('window');
@@ -24,24 +27,56 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const {
+    popupConfig,
+    isVisible,
+    hidePopup,
+    showSuccess,
+    showError,
+    showLoading,
+  } = usePopup();
+  
+  const {
+    toasts,
+    removeToast,
+    showSuccess: showToastSuccess,
+    showError: showToastError,
+    showInfo: showToastInfo,
+  } = useToast();
 
   const handleLogin = async () => {
     if (isLoading) return;
 
-    // Validation des champs
-    if (!email.trim() || !password) {
-      Alert.alert('Erreur', 'Email et mot de passe requis');
+    // Validation des champs avec toast pour les erreurs mineures
+    if (!email.trim()) {
+      showToastError('Email requis', 'Veuillez saisir votre adresse email');
+      return;
+    }
+    
+    if (!password) {
+      showToastError('Mot de passe requis', 'Veuillez saisir votre mot de passe');
+      return;
+    }
+    
+    // Validation email simple
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      showToastError('Email invalide', 'Veuillez saisir une adresse email valide');
       return;
     }
 
     try {
       setIsLoading(true);
+      showLoading('Connexion', 'Connexion en cours...');
+      showToastInfo('Connexion', 'Vérification de vos identifiants...');
       console.log('Tentative de connexion...', email);
 
       // Test de connexion au backend
       const isConnected = await authService.testConnection();
       if (!isConnected) {
-        Alert.alert(
+        hidePopup();
+        showError(
           'Erreur de connexion', 
           'Impossible de se connecter au serveur. Vérifiez que le backend est démarré.'
         );
@@ -54,19 +89,28 @@ export default function LoginScreen() {
         password
       });
 
+      hidePopup();
+      
       if (response.success) {
         console.log(' Connexion réussie, redirection vers l\'accueil...');
-        // Rediriger automatiquement vers l'écran principal
-        router.replace('/(tabs)');
+        showSuccess('Connexion réussie', 'Bienvenue sur Spota !', 6000);
+        showToastSuccess('Connexion réussie', 'Redirection vers l\'accueil...');
+        // Rediriger automatiquement vers l'écran principal après un délai
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 6000);
       } else {
-        Alert.alert('Erreur de connexion', response.message);
+        showError('Erreur de connexion', response.message);
+        showToastError('Échec de connexion', 'Vérifiez vos identifiants');
       }
     } catch (error) {
+      hidePopup();
       console.error(' Erreur connexion:', error);
-      Alert.alert(
+      showError(
         'Erreur', 
         'Une erreur s\'est produite lors de la connexion. Veuillez réessayer.'
       );
+      showToastError('Erreur réseau', 'Problème de connexion au serveur');
     } finally {
       setIsLoading(false);
     }
@@ -191,6 +235,19 @@ export default function LoginScreen() {
           </View>
         </KeyboardAvoidingView>
       </LinearGradient>
+      
+      {/* Pop-up Manager */}
+      <PopupManager
+        visible={isVisible}
+        config={popupConfig}
+        onClose={hidePopup}
+      />
+      
+      {/* Toast Manager */}
+      <ToastManager
+        toasts={toasts}
+        onRemoveToast={removeToast}
+      />
     </AuthGuard>
   );
 }
