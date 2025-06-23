@@ -1,18 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-    Dimensions,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
+import AuthGuard from '../components/AuthGuard';
+import authService from '../services/authService';
 
 const { width } = Dimensions.get('window');
 
@@ -20,109 +23,160 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    // TODO: Implémenter la logique de connexion
-    console.log('Tentative de connexion avec:', email, password);
+  const handleLogin = async () => {
+    if (isLoading) return;
+
+    // Validation des champs
+    if (!email.trim() || !password) {
+      Alert.alert('Erreur', 'Email et mot de passe requis');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      console.log('Tentative de connexion...', email);
+
+      // Test de connexion au backend
+      const isConnected = await authService.testConnection();
+      if (!isConnected) {
+        Alert.alert(
+          'Erreur de connexion', 
+          'Impossible de se connecter au serveur. Vérifiez que le backend est démarré.'
+        );
+        return;
+      }
+
+      // Connexion via le service d'authentification
+      const response = await authService.login({
+        email: email.trim().toLowerCase(),
+        password
+      });
+
+      if (response.success) {
+        console.log(' Connexion réussie, redirection vers l\'accueil...');
+        // Rediriger automatiquement vers l'écran principal
+        router.replace('/(tabs)');
+      } else {
+        Alert.alert('Erreur de connexion', response.message);
+      }
+    } catch (error) {
+      console.error(' Erreur connexion:', error);
+      Alert.alert(
+        'Erreur', 
+        'Une erreur s\'est produite lors de la connexion. Veuillez réessayer.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <LinearGradient
-      colors={["#18171c", "#23202a", "#18171c"]}
-      style={styles.container}
-    >
-      <StatusBar style="light" />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+    <AuthGuard redirectIfAuthenticated={true}>
+      <LinearGradient
+        colors={["#18171c", "#23202a", "#18171c"]}
+        style={styles.container}
       >
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <LinearGradient
-                colors={["#7f7fff", "#FFD36F", "#ff6f91"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.logoGradient}
-              >
-                <Text style={styles.logoText}>S</Text>
-              </LinearGradient>
+        <StatusBar style="light" />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <View style={styles.logoContainer}>
+                <LinearGradient
+                  colors={["#7f7fff", "#FFD36F", "#ff6f91"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.logoGradient}
+                >
+                  <Text style={styles.logoText}>S</Text>
+                </LinearGradient>
+              </View>
+              <Text style={styles.title}>Connexion</Text>
+              <Text style={styles.subtitle}>Retrouvez des sorties près de chez vous</Text>
             </View>
-            <Text style={styles.title}>Connexion</Text>
-            <Text style={styles.subtitle}>Retrouvez des sorties près de chez vous</Text>
-          </View>
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={22} color="#b0b0b0" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#b0b0b0"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-            
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={22} color="#b0b0b0" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Mot de passe"
-                placeholderTextColor="#b0b0b0"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity 
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons 
-                  name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                  size={22} 
-                  color="#b0b0b0" 
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <Ionicons name="mail-outline" size={22} color="#b0b0b0" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor="#b0b0b0"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
                 />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-              <Text style={styles.buttonText}>Se connecter</Text>
-            </TouchableOpacity>
-
-            <View style={styles.separator}>
-              <View style={styles.separatorLine} />
-              <Text style={styles.separatorText}>ou</Text>
-              <View style={styles.separatorLine} />
-            </View>
-
-            <View style={styles.socialButtons}>
-              <TouchableOpacity style={styles.socialButton}>
-                <Ionicons name="logo-google" size={24} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
-                <Ionicons name="logo-apple" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Pas encore de compte ? </Text>
-              <Link href="/register" asChild>
-                <TouchableOpacity>
-                  <Text style={styles.footerLink}>S'inscrire</Text>
+              </View>
+              
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed-outline" size={22} color="#b0b0b0" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Mot de passe"
+                  placeholderTextColor="#b0b0b0"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity 
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons 
+                    name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                    size={22} 
+                    color="#b0b0b0" 
+                  />
                 </TouchableOpacity>
-              </Link>
+              </View>
+
+              <TouchableOpacity style={styles.forgotPassword}>
+                <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.button, isLoading && styles.buttonDisabled]} 
+                onPress={handleLogin}
+                disabled={isLoading}
+              >
+                <Text style={styles.buttonText}>
+                  {isLoading ? 'Connexion...' : 'Se connecter'}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.separator}>
+                <View style={styles.separatorLine} />
+                <Text style={styles.separatorText}>ou</Text>
+                <View style={styles.separatorLine} />
+              </View>
+
+              <View style={styles.socialButtons}>
+                <TouchableOpacity style={styles.socialButton}>
+                  <Ionicons name="logo-google" size={24} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.socialButton}>
+                  <Ionicons name="logo-apple" size={24} color="#fff" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Pas encore de compte ? </Text>
+                <Link href="/register" asChild>
+                  <TouchableOpacity>
+                    <Text style={styles.footerLink}>S'inscrire</Text>
+                  </TouchableOpacity>
+                </Link>
+              </View>
             </View>
           </View>
-        </View>
-      </KeyboardAvoidingView>
-    </LinearGradient>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+    </AuthGuard>
   );
 }
 
@@ -256,5 +310,8 @@ const styles = StyleSheet.create({
     color: '#7f7fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  buttonDisabled: {
+    backgroundColor: '#ccc',
   },
 }); 

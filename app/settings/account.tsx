@@ -1,30 +1,49 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import useAuth, { type AuthState } from '../../hooks/useAuth';
 
 export default function AccountSettingsScreen() {
   const router = useRouter();
   const { theme, colors } = useTheme();
+  const { user, isLoading, isAuthenticated, updateProfile, deleteAccount, logout, refreshAuth, setAuthState } = useAuth();
 
-  // États pour les informations du compte
+  // États pour les informations du compte (initialisées avec les données de l'utilisateur connecté)
   const [accountInfo, setAccountInfo] = useState({
-    email: 'utilisateur@exemple.com',
-    phone: '',
-    username: '',
-    firstName: 'John',
-    lastName: 'Doe',
-    dateOfBirth: '',
-    address: '',
-    city: '',
-    country: '',
+    name: user?.name || '',
+    email: user?.email || '',
   });
 
   // États pour les modals
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Mettre à jour les informations quand l'utilisateur change
+  useEffect(() => {
+    if (user) {
+      console.log('🔄 Mise à jour des informations locales avec:', user.name);
+      setAccountInfo({
+        name: user.name || '',
+        email: user.email || '',
+      });
+    }
+  }, [user]);
+
+  // Rediriger vers login seulement si le chargement est terminé ET que l'utilisateur n'est pas authentifié
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  // Afficher rien pendant le chargement ou si pas authentifié
+  if (isLoading || !isAuthenticated || !user) {
+    return null;
+  }
 
   const navigateBack = () => {
     router.back();
@@ -35,29 +54,167 @@ export default function AccountSettingsScreen() {
     setEditingValue(currentValue);
   };
 
-  const handleSaveField = () => {
-    if (editingField) {
-      setAccountInfo(prev => ({
-        ...prev,
-        [editingField]: editingValue
-      }));
-      setEditingField(null);
-      setEditingValue('');
-      Alert.alert('Succès', 'Les informations ont été mises à jour');
+  const handleSaveField = async () => {
+    if (editingField && user) {
+      setIsUpdating(true);
+      
+      // Sauvegarder l'état actuel pour pouvoir revenir en arrière en cas d'erreur
+      const previousUser = { ...user };
+      
+      try {
+        // Préparer les données à mettre à jour
+        const updateData = {
+          [editingField]: editingValue
+        };
+
+        console.log('📝 Mise à jour du champ:', editingField, 'avec la valeur:', editingValue);
+
+        // ✨ OPTIMISTIC UPDATE : Mettre à jour immédiatement l'état local ET global
+        const optimisticUser = {
+          ...user,
+          [editingField]: editingValue
+        };
+
+        // Mettre à jour l'état local immédiatement
+        setAccountInfo(prev => ({
+          ...prev,
+          [editingField]: editingValue
+        }));
+
+        // Mettre à jour l'état global immédiatement (optimistic update)
+        setAuthState((prev: AuthState) => ({
+          ...prev,
+          user: optimisticUser,
+        }));
+
+        console.log('⚡ Mise à jour optimiste appliquée. Interface mise à jour immédiatement.');
+
+        // Appeler l'API pour confirmer la mise à jour
+        const result = await updateProfile(updateData);
+        
+        if (result.success) {
+          console.log('✅ Mise à jour confirmée par le backend:', result.user);
+          
+          // Forcer la synchronisation pour être sûr
+          refreshAuth();
+          
+          setEditingField(null);
+          setEditingValue('');
+          Alert.alert('Succès', 'Les informations ont été mises à jour dans la base de données');
+        } else {
+          // ❌ L'API a échoué, revenir à l'état précédent
+          console.log('❌ Échec de la mise à jour, restauration de l\'état précédent');
+          
+          setAccountInfo({
+            name: previousUser.name || '',
+            email: previousUser.email || '',
+          });
+          
+          // Restaurer l'état global
+          setAuthState((prev: AuthState) => ({
+            ...prev,
+            user: previousUser,
+          }));
+          
+          Alert.alert('Erreur', result.message || 'Impossible de mettre à jour les informations');
+        }
+      } catch (error) {
+        // ❌ Erreur réseau, revenir à l'état précédent
+        console.log('❌ Erreur réseau, restauration de l\'état précédent');
+        
+        setAccountInfo({
+          name: previousUser.name || '',
+          email: previousUser.email || '',
+        });
+        
+        // Restaurer l'état global
+        setAuthState((prev: AuthState) => ({
+          ...prev,
+          user: previousUser,
+        }));
+        
+        Alert.alert('Erreur', 'Une erreur est survenue lors de la mise à jour');
+      } finally {
+        setIsUpdating(false);
+      }
     }
   };
 
   const handleDeleteAccount = () => {
+    console.log('🗑️ Fonction handleDeleteAccount appelée');
     Alert.alert(
       'Supprimer le compte',
-      'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.',
+      'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront perdues définitivement.',
       [
         { text: 'Annuler', style: 'cancel' },
         { 
           text: 'Supprimer', 
           style: 'destructive',
-          onPress: () => {
-            Alert.alert('Compte supprimé', 'Votre compte a été supprimé avec succès');
+          onPress: async () => {
+            try {
+              console.log('🗑️ Début de la suppression du compte...');
+              console.log('🗑️ Utilisateur actuel:', user);
+              console.log('🗑️ Authentifié:', isAuthenticated);
+              
+              // Supprimer le compte côté serveur et attendre la confirmation
+              console.log('🗑️ Appel de deleteAccount()...');
+              const result = await deleteAccount();
+              console.log('🗑️ Résultat de deleteAccount:', result);
+              
+              if (result.success) {
+                // Suppression réussie, déconnexion automatique immédiate
+                console.log('✅ Suppression réussie, déconnexion automatique en cours...');
+                
+                // Déconnexion immédiate et redirection
+                console.log('🚪 Déconnexion automatique...');
+                await logout();
+                console.log('🔄 Redirection vers /login...');
+                router.replace('/login');
+                
+                // Afficher la confirmation après redirection
+                setTimeout(() => {
+                  Alert.alert(
+                    'Compte supprimé', 
+                    'Votre compte a été supprimé avec succès. Vous avez été déconnecté automatiquement.',
+                    [{ text: 'OK', style: 'default' }]
+                  );
+                }, 500);
+              } else {
+                // Erreur lors de la suppression
+                console.log('❌ Échec de la suppression:', result.message);
+                Alert.alert(
+                  'Erreur de suppression',
+                  result.message || 'Impossible de supprimer le compte de la base de données. Veuillez réessayer.',
+                  [
+                    {
+                      text: 'Réessayer',
+                      onPress: () => handleDeleteAccount()
+                    },
+                    {
+                      text: 'Annuler',
+                      style: 'cancel'
+                    }
+                  ]
+                );
+              }
+            } catch (error) {
+              // Erreur inattendue
+              console.error('❌ Erreur lors de la suppression du compte:', error);
+              Alert.alert(
+                'Erreur',
+                `Une erreur inattendue est survenue lors de la suppression: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+                [
+                  {
+                    text: 'Réessayer',
+                    onPress: () => handleDeleteAccount()
+                  },
+                  {
+                    text: 'Annuler',
+                    style: 'cancel'
+                  }
+                ]
+              );
+            }
           }
         }
       ]
@@ -66,15 +223,8 @@ export default function AccountSettingsScreen() {
 
   const getFieldLabel = (fieldName: string) => {
     const labels: { [key: string]: string } = {
+      name: 'Nom complet',
       email: 'E-mail',
-      phone: 'Numéro de téléphone',
-      username: 'Nom d\'utilisateur',
-      firstName: 'Prénom',
-      lastName: 'Nom de famille',
-      dateOfBirth: 'Date de naissance',
-      address: 'Adresse',
-      city: 'Ville',
-      country: 'Pays',
     };
     return labels[fieldName] || fieldName;
   };
@@ -92,10 +242,27 @@ export default function AccountSettingsScreen() {
       </View>
 
       <ScrollView style={styles.scrollView}>
-        {/* Informations de base */}
+        {/* Informations du compte */}
         <View style={[styles.section, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionSubTitle, { color: colors.text }]}>Informations de base</Text>
+          <Text style={[styles.sectionSubTitle, { color: colors.text }]}>Informations du compte</Text>
           
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => handleEditField('name', accountInfo.name)}
+          >
+            <View>
+              <Text style={[styles.settingTitle, { color: colors.text }]}>Nom complet</Text>
+              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
+                {accountInfo.name || 'Ajouter votre nom'}
+              </Text>
+            </View>
+            <View style={styles.iconContainer}>
+              <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
+            </View>
+          </TouchableOpacity>
+
+          <View style={[styles.divider, { backgroundColor: theme === 'dark' ? '#333' : '#E5E5E5' }]} />
+
           <TouchableOpacity 
             style={styles.settingItem}
             onPress={() => handleEditField('email', accountInfo.email)}
@@ -104,148 +271,6 @@ export default function AccountSettingsScreen() {
               <Text style={[styles.settingTitle, { color: colors.text }]}>E-mail</Text>
               <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
                 {accountInfo.email || 'Ajouter un e-mail'}
-              </Text>
-            </View>
-            <View style={styles.iconContainer}>
-              <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
-            </View>
-          </TouchableOpacity>
-
-          <View style={[styles.divider, { backgroundColor: theme === 'dark' ? '#333' : '#E5E5E5' }]} />
-
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => handleEditField('phone', accountInfo.phone)}
-          >
-            <View>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>Numéro de téléphone</Text>
-              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                {accountInfo.phone || 'Ajouter un numéro'}
-              </Text>
-            </View>
-            <View style={styles.iconContainer}>
-              <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
-            </View>
-          </TouchableOpacity>
-
-          <View style={[styles.divider, { backgroundColor: theme === 'dark' ? '#333' : '#E5E5E5' }]} />
-
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => handleEditField('username', accountInfo.username)}
-          >
-            <View>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>Nom d'utilisateur</Text>
-              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                {accountInfo.username || 'Définir un nom d\'utilisateur'}
-              </Text>
-            </View>
-            <View style={styles.iconContainer}>
-              <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Informations personnelles */}
-        <View style={[styles.section, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionSubTitle, { color: colors.text }]}>Informations personnelles</Text>
-          
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => handleEditField('firstName', accountInfo.firstName)}
-          >
-            <View>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>Prénom</Text>
-              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                {accountInfo.firstName || 'Ajouter votre prénom'}
-              </Text>
-            </View>
-            <View style={styles.iconContainer}>
-              <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
-            </View>
-          </TouchableOpacity>
-
-          <View style={[styles.divider, { backgroundColor: theme === 'dark' ? '#333' : '#E5E5E5' }]} />
-
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => handleEditField('lastName', accountInfo.lastName)}
-          >
-            <View>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>Nom de famille</Text>
-              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                {accountInfo.lastName || 'Ajouter votre nom'}
-              </Text>
-            </View>
-            <View style={styles.iconContainer}>
-              <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
-            </View>
-          </TouchableOpacity>
-
-          <View style={[styles.divider, { backgroundColor: theme === 'dark' ? '#333' : '#E5E5E5' }]} />
-
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => handleEditField('dateOfBirth', accountInfo.dateOfBirth)}
-          >
-            <View>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>Date de naissance</Text>
-              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                {accountInfo.dateOfBirth || 'Ajouter votre date de naissance'}
-              </Text>
-            </View>
-            <View style={styles.iconContainer}>
-              <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Adresse */}
-        <View style={[styles.section, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionSubTitle, { color: colors.text }]}>Adresse</Text>
-          
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => handleEditField('address', accountInfo.address)}
-          >
-            <View>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>Adresse</Text>
-              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                {accountInfo.address || 'Ajouter votre adresse'}
-              </Text>
-            </View>
-            <View style={styles.iconContainer}>
-              <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
-            </View>
-          </TouchableOpacity>
-
-          <View style={[styles.divider, { backgroundColor: theme === 'dark' ? '#333' : '#E5E5E5' }]} />
-
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => handleEditField('city', accountInfo.city)}
-          >
-            <View>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>Ville</Text>
-              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                {accountInfo.city || 'Ajouter votre ville'}
-              </Text>
-            </View>
-            <View style={styles.iconContainer}>
-              <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
-            </View>
-          </TouchableOpacity>
-
-          <View style={[styles.divider, { backgroundColor: theme === 'dark' ? '#333' : '#E5E5E5' }]} />
-
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => handleEditField('country', accountInfo.country)}
-          >
-            <View>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>Pays</Text>
-              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                {accountInfo.country || 'Ajouter votre pays'}
               </Text>
             </View>
             <View style={styles.iconContainer}>
@@ -293,12 +318,17 @@ export default function AccountSettingsScreen() {
               onPress={() => {}}
             >
               <View style={styles.modalHeader}>
-                <TouchableOpacity onPress={() => setEditingField(null)}>
-                  <Text style={[styles.modalCancel, { color: colors.textSecondary }]}>Annuler</Text>
+                <TouchableOpacity onPress={() => setEditingField(null)} disabled={isUpdating}>
+                  <Text style={[styles.modalCancel, { 
+                    color: colors.textSecondary,
+                    opacity: isUpdating ? 0.5 : 1
+                  }]}>Annuler</Text>
                 </TouchableOpacity>
                 <View style={{ flex: 1 }} />
-                <TouchableOpacity onPress={handleSaveField}>
-                  <Text style={styles.modalSave}>Enregistrer</Text>
+                <TouchableOpacity onPress={handleSaveField} disabled={isUpdating}>
+                  <Text style={[styles.modalSave, { opacity: isUpdating ? 0.5 : 1 }]}>
+                    {isUpdating ? 'Sauvegarde...' : 'Enregistrer'}
+                  </Text>
                 </TouchableOpacity>
               </View>
               
@@ -316,10 +346,11 @@ export default function AccountSettingsScreen() {
                   onChangeText={setEditingValue}
                   placeholder={`Entrez votre ${editingField && getFieldLabel(editingField).toLowerCase()}`}
                   placeholderTextColor={theme === 'dark' ? '#8E8E93' : '#8E8E93'}
-                  keyboardType={editingField === 'email' ? 'email-address' : editingField === 'phone' ? 'phone-pad' : 'default'}
+                  keyboardType={editingField === 'email' ? 'email-address' : 'default'}
                   autoCapitalize={editingField === 'email' ? 'none' : 'words'}
                   autoFocus={true}
                   selectionColor={theme === 'dark' ? '#FFD36F' : '#007AFF'}
+                  editable={!isUpdating}
                 />
               </View>
             </TouchableOpacity>

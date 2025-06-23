@@ -57,6 +57,11 @@ export default function EventDetailScreen() {
     );
   };
 
+  // Ouvrir une nouvelle discussion
+  const handleNewDiscussion = () => {
+    router.push('/(tabs)/discover');
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={theme === 'dark' ? "light" : "dark"} />
@@ -106,7 +111,7 @@ export default function EventDetailScreen() {
           </TouchableOpacity>
           
           <View style={styles.secondaryActions}>
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity style={styles.iconButton} onPress={handleNewDiscussion}>
               <Ionicons name="mail-outline" size={28} color={colors.text} />
             </TouchableOpacity>
             
