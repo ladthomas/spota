@@ -4,7 +4,6 @@ import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useRef, useState } from 'react';
 import {
-  Alert,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
@@ -16,6 +15,10 @@ import {
   View
 } from 'react-native';
 import AuthGuard from '../components/AuthGuard';
+import PopupManager from '../components/PopupManager';
+import ToastManager from '../components/ToastManager';
+import { usePopup } from '../hooks/usePopup';
+import { useToast } from '../hooks/useToast';
 import authService from '../services/authService';
 
 const { width } = Dimensions.get('window');
@@ -32,34 +35,92 @@ export default function RegisterScreen() {
   // Refs pour les champs
   const passwordRef = useRef(null);
   const confirmPasswordRef = useRef(null);
+  
+  const {
+    popupConfig,
+    isVisible,
+    hidePopup,
+    showSuccess,
+    showError,
+    showLoading,
+  } = usePopup();
+  
+  const {
+    toasts,
+    removeToast,
+    showSuccess: showToastSuccess,
+    showError: showToastError,
+    showInfo: showToastInfo,
+    showWarning: showToastWarning,
+  } = useToast();
 
   const handleRegister = async () => {
     if (isLoading) return;
 
-    // Validation des champs
-    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
-      Alert.alert('Erreur', 'Tous les champs sont requis');
+    // Validations détaillées avec toasts
+    if (!name.trim()) {
+      showToastError('Nom requis', 'Veuillez saisir votre nom complet');
+      return;
+    }
+    
+    if (name.trim().length < 2) {
+      showToastError('Nom trop court', 'Le nom doit contenir au moins 2 caractères');
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
+    if (!email.trim()) {
+      showToastError('Email requis', 'Veuillez saisir votre adresse email');
+      return;
+    }
+    
+    // Validation email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      showToastError('Email invalide', 'Veuillez saisir une adresse email valide');
+      return;
+    }
+
+    if (!password) {
+      showToastError('Mot de passe requis', 'Veuillez créer un mot de passe');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Erreur', 'Le mot de passe doit contenir au moins 6 caractères');
+      showToastWarning('Mot de passe trop court', 'Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+    
+    // Validation force du mot de passe
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+      showToastWarning('Mot de passe faible', 'Utilisez majuscules, minuscules et chiffres');
+      // On continue quand même, c'est juste un avertissement
+    }
+
+    if (!confirmPassword) {
+      showToastError('Confirmation requise', 'Veuillez confirmer votre mot de passe');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showToastError('Mots de passe différents', 'Les mots de passe ne correspondent pas');
       return;
     }
 
     try {
       setIsLoading(true);
+      showLoading('Inscription', 'Création de votre compte...');
+      showToastInfo('Inscription', 'Vérification des informations...');
       console.log(' Tentative d\'inscription...', email);
 
       // Test de connexion au backend
       const isConnected = await authService.testConnection();
       if (!isConnected) {
-        Alert.alert(
+        hidePopup();
+        showError(
           'Erreur de connexion', 
           'Impossible de se connecter au serveur. Vérifiez que le backend est démarré.'
         );
@@ -74,19 +135,28 @@ export default function RegisterScreen() {
         confirmPassword
       });
 
+      hidePopup();
+
       if (response.success) {
         console.log(' Inscription réussie, redirection vers l\'accueil...');
-        // Rediriger automatiquement vers l'écran principal
-        router.replace('/(tabs)');
+        showSuccess('Inscription réussie', 'Bienvenue dans la communauté Spota !', 7000);
+        showToastSuccess('Compte créé', 'Redirection vers l\'accueil...');
+        // Rediriger automatiquement vers l'écran principal après un délai
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 7000);
       } else {
-        Alert.alert('Erreur d\'inscription', response.message);
+        showError('Erreur d\'inscription', response.message);
+        showToastError('Échec d\'inscription', 'Vérifiez vos informations');
       }
     } catch (error) {
+      hidePopup();
       console.error(' Erreur inscription:', error);
-      Alert.alert(
+      showError(
         'Erreur', 
         'Une erreur s\'est produite lors de l\'inscription. Veuillez réessayer.'
       );
+      showToastError('Erreur réseau', 'Problème de connexion au serveur');
     } finally {
       setIsLoading(false);
     }
@@ -270,6 +340,19 @@ export default function RegisterScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </LinearGradient>
+      
+      {/* Pop-up Manager */}
+      <PopupManager
+        visible={isVisible}
+        config={popupConfig}
+        onClose={hidePopup}
+      />
+      
+      {/* Toast Manager */}
+      <ToastManager
+        toasts={toasts}
+        onRemoveToast={removeToast}
+      />
     </AuthGuard>
   );
 }
