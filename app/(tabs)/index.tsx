@@ -3,14 +3,14 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-    FlatList,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useAppContext } from '../../contexts/AppContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -27,7 +27,15 @@ const categories = [
 
 export default function AccueilScreen() {
   const router = useRouter();
-  const { evenements, favoris, ajouterFavori, retirerFavori } = useAppContext();
+  const { 
+    evenements, 
+    favoris, 
+    loading, 
+    error,
+    ajouterFavori, 
+    retirerFavori,
+    rafraichirEvenements 
+  } = useAppContext();
   const { theme, colors } = useTheme();
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -76,7 +84,7 @@ export default function AccueilScreen() {
       onPress={() => router.push(`/event/${item.id}`)}
     >
       <Image
-        source={{ uri: 'https://picsum.photos/300/200' }}
+        source={{ uri: item.image || 'https://picsum.photos/300/200' }}
         style={styles.eventImage}
       />
       <TouchableOpacity
@@ -91,14 +99,20 @@ export default function AccueilScreen() {
       </TouchableOpacity>
       
       <View style={styles.eventInfo}>
-        <Text style={[styles.eventTitle, { color: colors.text }]}>{item.titre}</Text>
+        <Text style={[styles.eventTitle, { color: colors.text }]} numberOfLines={2}>
+          {item.titre}
+        </Text>
         <View style={styles.eventDetails}>
           <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-          <Text style={[styles.eventLocation, { color: colors.textSecondary }]}>{item.lieu}</Text>
+          <Text style={[styles.eventLocation, { color: colors.textSecondary }]} numberOfLines={1}>
+            {item.lieu}
+          </Text>
         </View>
         <View style={styles.eventDetails}>
           <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-          <Text style={[styles.eventTime, { color: colors.textSecondary }]}>{item.date}</Text>
+          <Text style={[styles.eventTime, { color: colors.textSecondary }]} numberOfLines={1}>
+            {item.date}
+          </Text>
         </View>
         <Text style={styles.eventPrice}>{item.prix}</Text>
       </View>
@@ -179,14 +193,41 @@ export default function AccueilScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {selectedCategory ? `Événements ${selectedCategory}` : 'Événements recommandés'}
+              {selectedCategory ? `Événements ${selectedCategory}` : 'Événements parisiens'}
             </Text>
-            <TouchableOpacity onPress={() => router.push('/discover')}>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/map')}>
               <Text style={styles.seeAllText}>Voir tout</Text>
             </TouchableOpacity>
           </View>
           
-          {evenementsFiltres.length > 0 ? (
+          {/* État de chargement */}
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <Ionicons name="refresh" size={40} color={colors.textSecondary} />
+              <Text style={[styles.loadingText, { color: colors.text }]}>
+                Chargement des événements...
+              </Text>
+              <Text style={[styles.loadingSubText, { color: colors.textSecondary }]}>
+                Récupération depuis l'API officielle de Paris
+              </Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Ionicons name="warning-outline" size={40} color="#ff6b6b" />
+              <Text style={[styles.errorText, { color: colors.text }]}>
+                Erreur de chargement
+              </Text>
+              <Text style={[styles.errorSubText, { color: colors.textSecondary }]}>
+                {error}
+              </Text>
+              <TouchableOpacity 
+                style={styles.retryButton}
+                onPress={rafraichirEvenements}
+              >
+                <Text style={styles.retryButtonText}>Réessayer</Text>
+              </TouchableOpacity>
+            </View>
+          ) : evenementsFiltres.length > 0 ? (
             <FlatList
               data={evenementsFiltres.slice(0, 6)}
               renderItem={renderEvent}
@@ -200,7 +241,10 @@ export default function AccueilScreen() {
               <Ionicons name="calendar-outline" size={60} color={colors.textSecondary} />
               <Text style={[styles.emptyText, { color: colors.text }]}>Aucun événement trouvé</Text>
               <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>
-                Essayez avec d'autres mots-clés ou explorez toutes les catégories
+                {searchText || selectedCategory 
+                  ? 'Essayez avec d\'autres mots-clés ou explorez toutes les catégories'
+                  : 'Aucun événement disponible pour le moment'
+                }
               </Text>
             </View>
           )}
@@ -399,5 +443,48 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 10,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    marginTop: 10,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  loadingSubText: {
+    fontSize: 14,
+    marginTop: 5,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  errorText: {
+    fontSize: 16,
+    marginTop: 10,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  errorSubText: {
+    fontSize: 14,
+    marginTop: 5,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  retryButton: {
+    backgroundColor: '#7f7fff',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 15,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 }); 

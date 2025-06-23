@@ -34,7 +34,7 @@ export default function TabsLayout() {
         name="discover"
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="compass" color={color} size={28} />
+            <Ionicons name="chatbubbles" color={color} size={28} />
           ),
         }}
       />

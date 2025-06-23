@@ -3,10 +3,12 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import useAuth from '../../hooks/useAuth';
 
 export default function ProfileScreen() {
   const [darkMode, setDarkMode] = useState(true);
   const { theme, colors } = useTheme();
+  const { logout, user } = useAuth();
 
   const navigateToSettings = () => {
     router.push('/settings/account');
@@ -58,8 +60,17 @@ export default function ProfileScreen() {
     console.log('Navigation temporaire - cette section sera implémentée plus tard');
   };
 
-  const handleLogout = () => {
-    router.replace('/login');
+  const handleLogout = async () => {
+    try {
+      console.log('🚪 Déconnexion en cours...');
+      await logout();
+      console.log('✅ Déconnexion réussie, redirection vers register...');
+      router.replace('/register');
+    } catch (error) {
+      console.error('❌ Erreur lors de la déconnexion:', error);
+      // En cas d'erreur, rediriger quand même vers register
+      router.replace('/register');
+    }
   };
 
   return (
@@ -76,7 +87,9 @@ export default function ProfileScreen() {
             <View style={styles.profileImage} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={[styles.profileName, { color: colors.text }]}>Thomas Ladou</Text>
+            <Text style={[styles.profileName, { color: colors.text }]}>
+              {user?.name || 'Utilisateur'}
+            </Text>
             <TouchableOpacity style={styles.editProfileButton} onPress={handleTemporaryNavigation}>
               <Text style={[styles.editProfileText, { color: colors.textSecondary }]}>Modifier le profil</Text>
               <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} style={{ marginLeft: 5 }} />
@@ -97,7 +110,7 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={styles.arrowIcon} />
           </TouchableOpacity>
           
-          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: theme === 'dark' ? '#333' : '#E5E5E5' }]} onPress={navigateToPayment}>
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: theme === 'dark' ? '#333' : '#E5E5E5' }]} onPress={() => {}}>
             <View style={styles.menuIconContainer}>
               <MaterialCommunityIcons name="credit-card-outline" size={24} color={colors.textSecondary} />
             </View>
