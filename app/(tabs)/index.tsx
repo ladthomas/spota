@@ -3,17 +3,18 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-  FlatList,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    FlatList,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useAppContext } from '../../contexts/AppContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { cleanHtmlText } from '../../utils/textHelpers';
 
 const categories = [
  /* { id: 'all', nom: 'Tout', icon: 'grid', color: '#7f7fff' },*/  /* suppresiion du bouton dans la nav categorie */
@@ -100,21 +101,21 @@ export default function AccueilScreen() {
       
       <View style={styles.eventInfo}>
         <Text style={[styles.eventTitle, { color: colors.text }]} numberOfLines={2}>
-          {item.titre}
+          {cleanHtmlText(item.titre)}
         </Text>
         <View style={styles.eventDetails}>
           <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
           <Text style={[styles.eventLocation, { color: colors.textSecondary }]} numberOfLines={1}>
-            {item.lieu}
+            {cleanHtmlText(item.lieu)}
           </Text>
         </View>
         <View style={styles.eventDetails}>
           <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
           <Text style={[styles.eventTime, { color: colors.textSecondary }]} numberOfLines={1}>
-            {item.date}
+            {cleanHtmlText(item.date)}
           </Text>
         </View>
-        <Text style={styles.eventPrice}>{item.prix}</Text>
+        <Text style={styles.eventPrice}>{cleanHtmlText(item.prix)}</Text>
       </View>
     </TouchableOpacity>
   );

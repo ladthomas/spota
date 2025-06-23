@@ -3,20 +3,21 @@ import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  Image,
-  PanResponder,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Alert,
+    Dimensions,
+    Image,
+    PanResponder,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useAppContext } from '../../contexts/AppContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { cleanHtmlText } from '../../utils/textHelpers';
 
 const { width, height } = Dimensions.get('window');
 
@@ -383,21 +384,21 @@ export default function MapScreen() {
                   
                   <View style={styles.eventPopupContent}>
                     <Text style={[styles.eventPopupTitle, { color: colors.text }]} numberOfLines={2}>
-                      {event.titre}
+                      {cleanHtmlText(event.titre)}
                     </Text>
                     <View style={styles.eventPopupDetails}>
                       <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
                       <Text style={[styles.eventPopupLocation, { color: colors.textSecondary }]} numberOfLines={1}>
-                        {event.lieu}
+                        {cleanHtmlText(event.lieu)}
                       </Text>
                     </View>
                     <View style={styles.eventPopupDetails}>
                       <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
                       <Text style={[styles.eventPopupDate, { color: colors.textSecondary }]} numberOfLines={1}>
-                        {event.date}
+                        {cleanHtmlText(event.date)}
                       </Text>
                     </View>
-                    <Text style={styles.eventPopupPrice}>{event.prix}</Text>
+                    <Text style={styles.eventPopupPrice}>{cleanHtmlText(event.prix)}</Text>
                     
                     <View style={styles.eventPopupActions}>
                       <TouchableOpacity 
@@ -462,15 +463,15 @@ export default function MapScreen() {
                   />
                   <View style={styles.bottomEventInfo}>
                     <Text style={[styles.bottomEventTitle, { color: colors.text }]} numberOfLines={2}>
-                      {event.titre}
+                      {cleanHtmlText(event.titre)}
                     </Text>
                     <Text style={[styles.bottomEventLocation, { color: colors.textSecondary }]} numberOfLines={1}>
-                      {event.lieu}
+                      {cleanHtmlText(event.lieu)}
                     </Text>
                     <Text style={[styles.bottomEventDate, { color: colors.textSecondary }]} numberOfLines={1}>
-                      {event.date}
+                      {cleanHtmlText(event.date)}
                     </Text>
-                    <Text style={styles.bottomEventPrice}>{event.prix}</Text>
+                    <Text style={styles.bottomEventPrice}>{cleanHtmlText(event.prix)}</Text>
                   </View>
                   <TouchableOpacity
                     onPress={(e) => {

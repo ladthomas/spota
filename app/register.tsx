@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Alert,
   Dimensions,
@@ -24,10 +24,14 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(true);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(true);
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Refs pour les champs
+  const passwordRef = useRef(null);
+  const confirmPasswordRef = useRef(null);
 
   const handleRegister = async () => {
     if (isLoading) return;
@@ -117,6 +121,21 @@ export default function RegisterScreen() {
               </View>
 
               <View style={styles.form}>
+                {/* Champs fantômes pour tromper l'autocomplétion */}
+                <TextInput
+                  style={{ position: 'absolute', left: -1000, opacity: 0 }}
+                  autoComplete="username"
+                  value=""
+                  onChangeText={() => {}}
+                />
+                <TextInput
+                  style={{ position: 'absolute', left: -1000, opacity: 0 }}
+                  autoComplete="current-password"
+                  secureTextEntry={true}
+                  value=""
+                  onChangeText={() => {}}
+                />
+                
                 <View style={styles.inputContainer}>
                   <Ionicons name="person-outline" size={22} color="#b0b0b0" style={styles.inputIcon} />
                   <TextInput
@@ -126,6 +145,10 @@ export default function RegisterScreen() {
                     value={name}
                     onChangeText={setName}
                     autoCapitalize="words"
+                    autoCorrect={false}
+                    autoComplete="off"
+                    returnKeyType="next"
+                    blurOnSubmit={false}
                   />
                 </View>
                 
@@ -139,6 +162,10 @@ export default function RegisterScreen() {
                     onChangeText={setEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="off"
+                    returnKeyType="next"
+                    blurOnSubmit={false}
                   />
                 </View>
                 
@@ -150,7 +177,16 @@ export default function RegisterScreen() {
                     placeholderTextColor="#b0b0b0"
                     value={password}
                     onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
+                    secureTextEntry={showPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="off"
+                    textContentType="none"
+                    passwordRules=""
+                    importantForAutofill="no"
+                    returnKeyType="next"
+                    blurOnSubmit={false}
+                    ref={passwordRef}
                   />
                   <TouchableOpacity 
                     onPress={() => setShowPassword(!showPassword)}
@@ -172,7 +208,17 @@ export default function RegisterScreen() {
                     placeholderTextColor="#b0b0b0"
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
-                    secureTextEntry={!showConfirmPassword}
+                    secureTextEntry={showConfirmPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="off"
+                    textContentType="none"
+                    passwordRules=""
+                    importantForAutofill="no"
+                    returnKeyType="done"
+                    blurOnSubmit={true}
+                    onSubmitEditing={handleRegister}
+                    ref={confirmPasswordRef}
                   />
                   <TouchableOpacity 
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -282,6 +328,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 20,
     paddingVertical: 2,
+    minHeight: 55,
+    borderWidth: 1,
+    borderColor: '#3A3740',
+    // Force la couleur pour empêcher le surlignage
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
   },
   inputIcon: {
     marginRight: 10,
@@ -291,6 +345,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     paddingVertical: 15,
+    minHeight: 50,
+    lineHeight: 20,
+    backgroundColor: '#2A2730',
+    outline: 'none',
+    borderWidth: 0,
+    shadowOpacity: 0,
+    elevation: 0,
+    // Force la couleur pour empêcher le surlignage
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 0,
   },
   eyeIcon: {
     padding: 8,

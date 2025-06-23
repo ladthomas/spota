@@ -4,6 +4,7 @@ import React from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../../contexts/AppContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { cleanHtmlText } from '../../utils/textHelpers';
 
 export default function FavoritesScreen() {
   const { evenements, favoris, retirerFavori } = useAppContext();
@@ -36,9 +37,9 @@ export default function FavoritesScreen() {
               activeOpacity={0.7}
             >
               <View style={{flex: 1}}>
-                <Text style={[styles.titre, { color: colors.text }]}>{item.titre}</Text>
-                <Text style={[styles.lieu, { color: colors.textSecondary }]}>{item.lieu} • {item.date}</Text>
-                <Text style={styles.prix}>{item.prix}</Text>
+                <Text style={[styles.titre, { color: colors.text }]}>{cleanHtmlText(item.titre)}</Text>
+                <Text style={[styles.lieu, { color: colors.textSecondary }]}>{cleanHtmlText(item.lieu)} • {cleanHtmlText(item.date)}</Text>
+                <Text style={styles.prix}>{cleanHtmlText(item.prix)}</Text>
               </View>
               <TouchableOpacity 
                 onPress={(e) => {

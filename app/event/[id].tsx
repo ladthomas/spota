@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../../contexts/AppContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { cleanHtmlText } from '../../utils/textHelpers';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -95,7 +96,12 @@ export default function EventDetailScreen() {
 
         {/* Titre et info basiques */}
         <View style={styles.titleContainer}>
-          <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>Aujourd'hui, {evenement.date}</Text>
+          <Text style={[styles.eventTitle, { color: colors.text }]}>
+            {cleanHtmlText(evenement.titre)}
+          </Text>
+          <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>
+            {cleanHtmlText(evenement.date)}
+          </Text>
         </View>
 
         {/* Actions principales */}
@@ -150,16 +156,7 @@ export default function EventDetailScreen() {
         <View style={[styles.section, { borderTopColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>À propos de l'événement</Text>
           <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>
-            La French Stack #002 — Code Legacy
-
-            Rejoignez-nous pour cette deuxième édition de la French Stack, où nous échangerons sur les bonnes pratiques de développement et la gestion de la dette technique.
-
-            Au programme :
-            • Présentations de cas pratiques
-            • Ateliers collaboratifs
-            • Networking entre passionnés de tech
-
-            Tous les détails seront partagés avant le jour J. Vous pourrez profiter d'une ambiance conviviale et rencontrer de nouvelles personnes partageant vos intérêts.
+            {cleanHtmlText(evenement.description)}
           </Text>
         </View>
 
@@ -168,7 +165,7 @@ export default function EventDetailScreen() {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Prix</Text>
           <View style={styles.priceContainer}>
             <Ionicons name="cash-outline" size={22} color="#FFD36F" />
-            <Text style={styles.priceLabel}>{evenement.prix}</Text>
+            <Text style={styles.priceLabel}>{cleanHtmlText(evenement.prix)}</Text>
           </View>
         </View>
 
@@ -233,6 +230,11 @@ const styles = StyleSheet.create({
   titleContainer: {
     padding: 20,
     paddingBottom: 10,
+  },
+  eventTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
   },
   dateLabel: {
     fontSize: 18,
@@ -339,11 +341,6 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     padding: 20,
-  },
-  eventTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
   },
   infoItem: {
     flexDirection: 'row',

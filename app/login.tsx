@@ -4,15 +4,15 @@ import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Alert,
+    Dimensions,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import AuthGuard from '../components/AuthGuard';
 import authService from '../services/authService';
@@ -22,7 +22,7 @@ const { width } = Dimensions.get('window');
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -110,6 +110,10 @@ export default function LoginScreen() {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  returnKeyType="next"
+                  blurOnSubmit={false}
                 />
               </View>
               
@@ -121,7 +125,18 @@ export default function LoginScreen() {
                   placeholderTextColor="#b0b0b0"
                   value={password}
                   onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
+                  secureTextEntry={showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  textContentType="none"
+                  returnKeyType="done"
+                  enablesReturnKeyAutomatically={true}
+                  blurOnSubmit={true}
+                  spellCheck={false}
+                  passwordRules=""
+                  importantForAutofill="no"
+                  onSubmitEditing={handleLogin}
                 />
                 <TouchableOpacity 
                   onPress={() => setShowPassword(!showPassword)}
@@ -234,6 +249,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 20,
     paddingVertical: 2,
+    minHeight: 55,
+    borderWidth: 1,
+    borderColor: '#3A3740',
+    // Force la couleur pour empêcher le surlignage
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
   },
   inputIcon: {
     marginRight: 10,
@@ -243,6 +266,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     paddingVertical: 15,
+    minHeight: 50,
+    lineHeight: 20,
+    backgroundColor: '#2A2730',
+    // Force la couleur pour empêcher le surlignage
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
   },
   eyeIcon: {
     padding: 8,
