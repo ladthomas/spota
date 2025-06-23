@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Platform, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../../contexts/AppContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { cleanHtmlText } from '../../utils/textHelpers';
@@ -63,6 +64,71 @@ export default function EventDetailScreen() {
     router.push('/(tabs)/discover');
   };
 
+  // Partager l'événement
+  const handleShare = async () => {
+    try {
+      // Créer le message de partage
+      const shareMessage = `🎉 Découvrez cet événement parisien !
+
+📅 ${cleanHtmlText(evenement.titre)}
+📍 ${cleanHtmlText(evenement.lieu)}
+🗓️ ${cleanHtmlText(evenement.date)}
+💰 ${cleanHtmlText(evenement.prix)}
+
+${evenement.description ? `📝 ${cleanHtmlText(evenement.description).substring(0, 100)}...` : ''}
+
+Trouvé sur Spota - L'app des événements parisiens ! 🚀`;
+
+      // Utiliser l'API de partage native de React Native
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        const result = await Share.share({
+          message: shareMessage,
+          title: 'Événement Spota',
+        });
+        
+        if (result.action === Share.sharedAction) {
+          console.log('Événement partagé avec succès');
+        }
+      } else {
+        // Fallback pour web : copier dans le presse-papiers
+        await Clipboard.setStringAsync(shareMessage);
+        Alert.alert(
+          'Copié !',
+          'Les détails de l\'événement ont été copiés dans le presse-papiers.',
+          [{ text: 'OK' }]
+        );
+      }
+
+    } catch (error) {
+      console.error('Erreur lors du partage:', error);
+      
+      // Fallback : copier dans le presse-papiers
+      try {
+        const shareMessage = `🎉 Découvrez cet événement parisien !
+
+📅 ${cleanHtmlText(evenement.titre)}
+📍 ${cleanHtmlText(evenement.lieu)}
+🗓️ ${cleanHtmlText(evenement.date)}
+💰 ${cleanHtmlText(evenement.prix)}
+
+Trouvé sur Spota - L'app des événements parisiens ! 🚀`;
+
+        await Clipboard.setStringAsync(shareMessage);
+        Alert.alert(
+          'Copié dans le presse-papiers',
+          'Les détails de l\'événement ont été copiés. Vous pouvez les coller dans l\'app de votre choix.',
+          [{ text: 'OK' }]
+        );
+      } catch (clipboardError) {
+        Alert.alert(
+          'Erreur de partage',
+          'Impossible de partager cet événement pour le moment.',
+          [{ text: 'OK' }]
+        );
+      }
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={theme === 'dark' ? "light" : "dark"} />
@@ -121,7 +187,7 @@ export default function EventDetailScreen() {
               <Ionicons name="mail-outline" size={28} color={colors.text} />
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
               <Ionicons name="share-social-outline" size={28} color={colors.text} />
             </TouchableOpacity>
             

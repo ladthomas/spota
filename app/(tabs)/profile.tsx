@@ -26,6 +26,11 @@ export default function ProfileScreen() {
     router.push('/settings/appearance');
   };
 
+  // Fonction temporaire pour le partage
+  const handleShareApp = () => {
+    console.log('Partage à implémenter');
+  };
+
   // Ces routes ne sont pas encore implémentées
   // En attendant, utilisons une fonction temporaire
   

@@ -20,6 +20,7 @@ export default function FavoritesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.header, { color: colors.text }]}>Mes Favoris</Text>
+      
       {evenementsFavoris.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="heart" size={60} color={colors.textSecondary} />
