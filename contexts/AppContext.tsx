@@ -1,4 +1,5 @@
-import React, { createContext, ReactNode, useContext, useState } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import parisEventsService, { SimpleEvent } from '../services/parisEventsService';
 
 // Types
 type Evenement = {
@@ -10,98 +11,36 @@ type Evenement = {
   categorie?: string;
   latitude?: number;
   longitude?: number;
+  description?: string;
+  image?: string;
 };
 
 type AppContextType = {
   evenements: Evenement[];
   favoris: string[];
+  loading: boolean;
+  error: string | null;
   ajouterFavori: (id: string) => void;
   retirerFavori: (id: string) => void;
   ajouterEvenement: (evenement: Evenement) => void;
+  rechercherEvenements: (query: string) => Promise<Evenement[]>;
+  obtenirEvenementsGratuits: () => Promise<Evenement[]>;
+  rafraichirEvenements: () => Promise<void>;
 };
 
-// Données mock initiales
-const evenementsInitiaux: Evenement[] = [
+// Données de fallback en cas d'erreur API
+const evenementsFallback: Evenement[] = [
   {
-    id: '1',
-    titre: 'Concert gratuit au Parc',
-    lieu: 'Parc Monceau',
-    date: 'Ce soir, 19:00',
-    prix: 'Gratuit',
-    categorie: 'Musique',
-    latitude: 48.882, 
-    longitude: 2.308,
-  },
-  {
-    id: '2',
-    titre: 'Atelier Peinture',
-    lieu: 'Maison des Arts',
-    date: 'Demain, 15:00',
-    prix: '< 5€',
-    categorie: 'Art',
-    latitude: 48.870, 
-    longitude: 2.32,
-  },
-  {
-    id: '3',
-    titre: 'Balade guidée',
-    lieu: 'Quais de Seine',
-    date: 'Ce week-end',
-    prix: 'Gratuit',
-    categorie: 'Nature',
-    latitude: 48.857, 
-    longitude: 2.35,
-  },
-  {
-    id: '4',
-    titre: 'Match de foot amateur',
-    lieu: 'Stade Charléty',
-    date: 'Samedi, 14:00',
-    prix: 'Gratuit',
-    categorie: 'Sport',
-    latitude: 48.818, 
-    longitude: 2.346,
-  },
-  {
-    id: '5',
-    titre: 'Dégustation de fromages',
-    lieu: 'Marché des Enfants Rouges',
-    date: 'Dimanche, 11:00',
-    prix: '< 10€',
-    categorie: 'Food',
-    latitude: 48.863, 
-    longitude: 2.363,
-  },
-  {
-    id: '6',
-    titre: 'Meetup JavaScript',
-    lieu: 'Station F',
-    date: 'Jeudi, 18:30',
-    prix: 'Gratuit',
-    categorie: 'Tech',
-    latitude: 48.832, 
-    longitude: 2.372,
-  },
-  {
-    id: '7',
-    titre: 'Jazz Session',
-    lieu: 'Le Sunset',
-    date: 'Vendredi, 21:00',
-    prix: '< 15€',
-    categorie: 'Musique',
-    latitude: 48.858, 
-    longitude: 2.347,
-  },
-  {
-    id: '8',
-    titre: 'Exposition Photo',
-    lieu: 'Galerie Perrotin',
-    date: 'Tout le week-end',
-    prix: 'Gratuit',
-    categorie: 'Art',
-    latitude: 48.860, 
-    longitude: 2.327,
-  },
+    id: 'fallback-1',
+    titre: 'Événements parisiens en cours de chargement',
+    lieu: 'Paris',
+    date: 'Chargement...',
+    prix: 'Variable',
+    categorie: 'Culture',
+    latitude: 48.8566,
+    longitude: 2.3522,
+    description: 'Les événements sont en cours de chargement depuis l\'API officielle de Paris.'
+  }
 ];
 
 // Création du contexte
@@ -116,29 +55,122 @@ export const useAppContext = () => {
   return context;
 };
 
+// Fonction pour convertir SimpleEvent vers Evenement
+const convertirEvenement = (event: SimpleEvent): Evenement => ({
+  id: event.id,
+  titre: event.titre,
+  lieu: event.lieu,
+  date: event.date,
+  prix: event.prix,
+  categorie: event.categorie,
+  latitude: event.latitude,
+  longitude: event.longitude,
+  description: event.description,
+  image: event.image
+});
+
 // Provider du contexte
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [evenements, setEvenements] = useState<Evenement[]>(evenementsInitiaux);
+  const [evenements, setEvenements] = useState<Evenement[]>([]);
   const [favoris, setFavoris] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Charger les événements depuis l'API Paris au démarrage
+  const chargerEvenements = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('🚀 Chargement des événements depuis l\'API Paris...');
+      
+      const eventsFromAPI = await parisEventsService.getEvents({ limit: 50 });
+      const evenementsConverts = eventsFromAPI.map(convertirEvenement);
+      
+      if (evenementsConverts.length > 0) {
+        setEvenements(evenementsConverts);
+        console.log(`✅ ${evenementsConverts.length} événements chargés avec succès`);
+      } else {
+        console.log('⚠️ Aucun événement récupéré, utilisation des données de fallback');
+        setEvenements(evenementsFallback);
+      }
+    } catch (err) {
+      console.error('❌ Erreur lors du chargement des événements:', err);
+      setError('Impossible de charger les événements parisiens');
+      setEvenements(evenementsFallback);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Charger les événements au démarrage
+  useEffect(() => {
+    chargerEvenements();
+  }, []);
 
   const ajouterFavori = (id: string) => {
-    setFavoris(prevFavoris => [...prevFavoris, id]);
+    setFavoris(prevFavoris => {
+      if (!prevFavoris.includes(id)) {
+        const nouveauxFavoris = [...prevFavoris, id];
+        console.log(`💖 Favori ajouté: ${id}`);
+        return nouveauxFavoris;
+      }
+      return prevFavoris;
+    });
   };
 
   const retirerFavori = (id: string) => {
-    setFavoris(prevFavoris => prevFavoris.filter(favId => favId !== id));
+    setFavoris(prevFavoris => {
+      const nouveauxFavoris = prevFavoris.filter(favId => favId !== id);
+      console.log(`💔 Favori retiré: ${id}`);
+      return nouveauxFavoris;
+    });
   };
 
   const ajouterEvenement = (evenement: Evenement) => {
-    setEvenements(prevEvenements => [...prevEvenements, evenement]);
+    setEvenements(prevEvenements => {
+      const nouveauxEvenements = [...prevEvenements, evenement];
+      console.log(`➕ Événement ajouté: ${evenement.titre}`);
+      return nouveauxEvenements;
+    });
+  };
+
+  const rechercherEvenements = async (query: string): Promise<Evenement[]> => {
+    try {
+      console.log(`🔍 Recherche d'événements: "${query}"`);
+      const resultats = await parisEventsService.searchEvents(query);
+      return resultats.map(convertirEvenement);
+    } catch (err) {
+      console.error('❌ Erreur lors de la recherche:', err);
+      return [];
+    }
+  };
+
+  const obtenirEvenementsGratuits = async (): Promise<Evenement[]> => {
+    try {
+      console.log('💰 Récupération des événements gratuits...');
+      const evenementsGratuits = await parisEventsService.getFreeEvents();
+      return evenementsGratuits.map(convertirEvenement);
+    } catch (err) {
+      console.error('❌ Erreur lors de la récupération des événements gratuits:', err);
+      return [];
+    }
+  };
+
+  const rafraichirEvenements = async (): Promise<void> => {
+    await chargerEvenements();
   };
 
   const value = {
     evenements,
     favoris,
+    loading,
+    error,
     ajouterFavori,
     retirerFavori,
     ajouterEvenement,
+    rechercherEvenements,
+    obtenirEvenementsGratuits,
+    rafraichirEvenements,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
