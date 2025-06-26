@@ -58,7 +58,8 @@
           "locationAlwaysAndWhenInUsePermission": "Permettre à Spota d'accéder à votre position pour trouver les événements proches de vous."
         }
       ],
-      "expo-maps"
+      "expo-maps",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
