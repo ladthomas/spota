@@ -2,13 +2,36 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import PopupManager from '../../components/PopupManager';
+import ToastManager from '../../components/ToastManager';
 import { useTheme } from '../../contexts/ThemeContext';
 import useAuth from '../../hooks/useAuth';
+import { usePopup } from '../../hooks/usePopup';
+import { useToast } from '../../hooks/useToast';
 
 export default function ProfileScreen() {
   const [darkMode, setDarkMode] = useState(true);
   const { theme, colors } = useTheme();
   const { logout, user } = useAuth();
+  
+  // Hooks pour pop-ups et toasts
+  const { 
+    isVisible, 
+    popupConfig, 
+    showConfirm, 
+    showSuccess, 
+    showError, 
+    showLoading, 
+    hidePopup 
+  } = usePopup();
+  
+  const { 
+    toasts, 
+    showSuccess: showToastSuccess, 
+    showError: showToastError, 
+    showInfo: showToastInfo, 
+    removeToast 
+  } = useToast();
 
   const navigateToSettings = () => {
     router.push('/settings/account');
@@ -66,16 +89,46 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = async () => {
-    try {
-      console.log('🚪 Déconnexion en cours...');
-      await logout();
-      console.log('✅ Déconnexion réussie, redirection vers register...');
-      router.replace('/register');
-    } catch (error) {
-      console.error('❌ Erreur lors de la déconnexion:', error);
-      // En cas d'erreur, rediriger quand même vers register
-      router.replace('/register');
-    }
+    showConfirm(
+      'Déconnexion',
+      'Êtes-vous sûr de vouloir vous déconnecter ?',
+      async () => {
+        try {
+          showLoading('Déconnexion', 'Déconnexion en cours...');
+          showToastInfo('Déconnexion', 'Fermeture de votre session...');
+          
+          console.log('🚪 Déconnexion en cours...');
+          await logout();
+          
+          hidePopup();
+          showSuccess('Déconnexion réussie', 'À bientôt sur Spota !', 4000);
+          showToastSuccess('Déconnexion réussie', 'Session fermée avec succès');
+          
+          console.log('✅ Déconnexion réussie, redirection vers register...');
+          
+          // Redirection après un délai pour permettre à l'utilisateur de voir le message
+          setTimeout(() => {
+            router.replace('/register');
+          }, 4000);
+        } catch (error) {
+          hidePopup();
+          console.error('❌ Erreur lors de la déconnexion:', error);
+          showError(
+            'Erreur de déconnexion',
+            'Une erreur s\'est produite lors de la déconnexion. Redirection forcée...'
+          );
+          showToastError('Erreur', 'Problème lors de la déconnexion');
+          
+          // En cas d'erreur, rediriger quand même vers register après un délai
+          setTimeout(() => {
+            router.replace('/register');
+          }, 3000);
+        }
+      },
+      () => {
+        showToastInfo('Déconnexion annulée', 'Vous restez connecté');
+      }
+    );
   };
 
   return (
@@ -207,6 +260,19 @@ export default function ProfileScreen() {
           </View>
         </View>
       </ScrollView>
+      
+      {/* Pop-up Manager */}
+      <PopupManager
+        visible={isVisible}
+        config={popupConfig}
+        onClose={hidePopup}
+      />
+      
+      {/* Toast Manager */}
+      <ToastManager
+        toasts={toasts}
+        onRemoveToast={removeToast}
+      />
     </View>
   );
 }
