@@ -2,14 +2,37 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import PopupManager from '../../components/PopupManager';
+import ToastManager from '../../components/ToastManager';
 import { useTheme } from '../../contexts/ThemeContext';
 import useAuth, { type AuthState } from '../../hooks/useAuth';
+import { usePopup } from '../../hooks/usePopup';
+import { useToast } from '../../hooks/useToast';
 
 export default function AccountSettingsScreen() {
   const router = useRouter();
   const { theme, colors } = useTheme();
   const { user, isLoading, isAuthenticated, updateProfile, deleteAccount, logout, refreshAuth, setAuthState } = useAuth();
+
+  // Hooks pour pop-ups et toasts
+  const { 
+    isVisible, 
+    popupConfig, 
+    showConfirm, 
+    showSuccess, 
+    showError, 
+    showLoading, 
+    hidePopup 
+  } = usePopup();
+  
+  const { 
+    toasts, 
+    showSuccess: showToastSuccess, 
+    showError: showToastError, 
+    showInfo: showToastInfo, 
+    removeToast 
+  } = useToast();
 
   // États pour les informations du compte (initialisées avec les données de l'utilisateur connecté)
   const [accountInfo, setAccountInfo] = useState({
@@ -100,7 +123,8 @@ export default function AccountSettingsScreen() {
           
           setEditingField(null);
           setEditingValue('');
-          Alert.alert('Succès', 'Les informations ont été mises à jour dans la base de données');
+          showSuccess('Mise à jour réussie', 'Les informations ont été mises à jour dans la base de données');
+          showToastSuccess('Profil mis à jour', 'Vos informations ont été sauvegardées');
         } else {
           // ❌ L'API a échoué, revenir à l'état précédent
           console.log('❌ Échec de la mise à jour, restauration de l\'état précédent');
@@ -116,7 +140,8 @@ export default function AccountSettingsScreen() {
             user: previousUser,
           }));
           
-          Alert.alert('Erreur', result.message || 'Impossible de mettre à jour les informations');
+          showError('Erreur de mise à jour', result.message || 'Impossible de mettre à jour les informations');
+          showToastError('Échec de sauvegarde', 'Vérifiez votre connexion');
         }
       } catch (error) {
         // ❌ Erreur réseau, revenir à l'état précédent
@@ -133,7 +158,8 @@ export default function AccountSettingsScreen() {
           user: previousUser,
         }));
         
-        Alert.alert('Erreur', 'Une erreur est survenue lors de la mise à jour');
+        showError('Erreur réseau', 'Une erreur est survenue lors de la mise à jour');
+        showToastError('Problème de connexion', 'Veuillez réessayer plus tard');
       } finally {
         setIsUpdating(false);
       }
@@ -142,19 +168,17 @@ export default function AccountSettingsScreen() {
 
   const handleDeleteAccount = () => {
     console.log('🗑️ Fonction handleDeleteAccount appelée');
-    Alert.alert(
+    showConfirm(
       'Supprimer le compte',
       'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront perdues définitivement.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { 
-          text: 'Supprimer', 
-          style: 'destructive',
-          onPress: async () => {
+      async () => {
             try {
               console.log('🗑️ Début de la suppression du compte...');
               console.log('🗑️ Utilisateur actuel:', user);
               console.log('🗑️ Authentifié:', isAuthenticated);
+          
+          showLoading('Suppression du compte', 'Suppression de votre compte en cours...');
+          showToastInfo('Suppression', 'Traitement de votre demande...');
               
               // Supprimer le compte côté serveur et attendre la confirmation
               console.log('🗑️ Appel de deleteAccount()...');
@@ -164,60 +188,67 @@ export default function AccountSettingsScreen() {
               if (result.success) {
                 // Suppression réussie, déconnexion automatique immédiate
                 console.log('✅ Suppression réussie, déconnexion automatique en cours...');
+            
+            hidePopup();
+            showSuccess('Compte supprimé', 'Votre compte a été supprimé avec succès. Vous avez été déconnecté automatiquement.', 6000);
+            showToastSuccess('Suppression réussie', 'Redirection vers la page d\'accueil...');
                 
                 // Déconnexion immédiate et redirection
                 console.log('🚪 Déconnexion automatique...');
                 await logout();
                 console.log('🔄 Redirection vers /login...');
-                router.replace('/login');
                 
-                // Afficher la confirmation après redirection
+            // Redirection après un délai pour permettre à l'utilisateur de voir le message
                 setTimeout(() => {
-                  Alert.alert(
-                    'Compte supprimé', 
-                    'Votre compte a été supprimé avec succès. Vous avez été déconnecté automatiquement.',
-                    [{ text: 'OK', style: 'default' }]
-                  );
-                }, 500);
+              router.replace('/login');
+            }, 6000);
               } else {
                 // Erreur lors de la suppression
+            hidePopup();
                 console.log('❌ Échec de la suppression:', result.message);
-                Alert.alert(
+            showError(
                   'Erreur de suppression',
                   result.message || 'Impossible de supprimer le compte de la base de données. Veuillez réessayer.',
                   [
                     {
                       text: 'Réessayer',
+                  style: 'default',
                       onPress: () => handleDeleteAccount()
                     },
                     {
                       text: 'Annuler',
-                      style: 'cancel'
+                  style: 'cancel',
+                  onPress: () => {}
                     }
                   ]
                 );
+            showToastError('Échec de suppression', 'Veuillez réessayer plus tard');
               }
             } catch (error) {
-              // Erreur inattendue
-              console.error('❌ Erreur lors de la suppression du compte:', error);
-              Alert.alert(
-                'Erreur',
-                `Une erreur inattendue est survenue lors de la suppression: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+          hidePopup();
+          console.error('❌ Erreur suppression compte:', error);
+          showError(
+            'Erreur inattendue',
+            'Une erreur inattendue s\'est produite lors de la suppression. Veuillez réessayer.',
                 [
                   {
                     text: 'Réessayer',
+                style: 'default',
                     onPress: () => handleDeleteAccount()
                   },
                   {
                     text: 'Annuler',
-                    style: 'cancel'
+                style: 'cancel',
+                onPress: () => {}
                   }
                 ]
               );
-            }
-          }
+          showToastError('Erreur réseau', 'Problème de connexion au serveur');
         }
-      ]
+      },
+      () => {
+        showToastInfo('Suppression annulée', 'Votre compte n\'a pas été supprimé');
+      }
     );
   };
 
@@ -357,6 +388,19 @@ export default function AccountSettingsScreen() {
           </TouchableOpacity>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Pop-up Manager */}
+      <PopupManager
+        visible={isVisible}
+        config={popupConfig}
+        onClose={hidePopup}
+      />
+      
+      {/* Toast Manager */}
+      <ToastManager
+        toasts={toasts}
+        onRemoveToast={removeToast}
+      />
     </View>
   );
 }
