@@ -48,7 +48,7 @@ export default function AccountSettingsScreen() {
   // Mettre à jour les informations quand l'utilisateur change
   useEffect(() => {
     if (user) {
-      console.log('🔄 Mise à jour des informations locales avec:', user.name);
+      console.log(' Mise à jour des informations locales avec:', user.name);
       setAccountInfo({
         name: user.name || '',
         email: user.email || '',
@@ -90,7 +90,7 @@ export default function AccountSettingsScreen() {
           [editingField]: editingValue
         };
 
-        console.log('📝 Mise à jour du champ:', editingField, 'avec la valeur:', editingValue);
+        console.log(' Mise à jour du champ:', editingField, 'avec la valeur:', editingValue);
 
         // ✨ OPTIMISTIC UPDATE : Mettre à jour immédiatement l'état local ET global
         const optimisticUser = {
@@ -116,7 +116,7 @@ export default function AccountSettingsScreen() {
         const result = await updateProfile(updateData);
         
         if (result.success) {
-          console.log('✅ Mise à jour confirmée par le backend:', result.user);
+          console.log(' Mise à jour confirmée par le backend:', result.user);
           
           // Forcer la synchronisation pour être sûr
           refreshAuth();
@@ -126,8 +126,8 @@ export default function AccountSettingsScreen() {
           showSuccess('Mise à jour réussie', 'Les informations ont été mises à jour dans la base de données');
           showToastSuccess('Profil mis à jour', 'Vos informations ont été sauvegardées');
         } else {
-          // ❌ L'API a échoué, revenir à l'état précédent
-          console.log('❌ Échec de la mise à jour, restauration de l\'état précédent');
+          // L'API a échoué, revenir à l'état précédent
+          console.log(' Échec de la mise à jour, restauration de l\'état précédent');
           
           setAccountInfo({
             name: previousUser.name || '',
@@ -144,8 +144,8 @@ export default function AccountSettingsScreen() {
           showToastError('Échec de sauvegarde', 'Vérifiez votre connexion');
         }
       } catch (error) {
-        // ❌ Erreur réseau, revenir à l'état précédent
-        console.log('❌ Erreur réseau, restauration de l\'état précédent');
+        // Erreur réseau, revenir à l'état précédent
+        console.log('Erreur réseau, restauration de l\'état précédent');
         
         setAccountInfo({
           name: previousUser.name || '',
@@ -167,36 +167,36 @@ export default function AccountSettingsScreen() {
   };
 
   const handleDeleteAccount = () => {
-    console.log('🗑️ Fonction handleDeleteAccount appelée');
+    console.log(' Fonction handleDeleteAccount appelée');
     showConfirm(
       'Supprimer le compte',
       'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront perdues définitivement.',
       async () => {
             try {
-              console.log('🗑️ Début de la suppression du compte...');
-              console.log('🗑️ Utilisateur actuel:', user);
-              console.log('🗑️ Authentifié:', isAuthenticated);
+              console.log(' Début de la suppression du compte...');
+              console.log(' Utilisateur actuel:', user);
+              console.log(' Authentifié:', isAuthenticated);
           
           showLoading('Suppression du compte', 'Suppression de votre compte en cours...');
           showToastInfo('Suppression', 'Traitement de votre demande...');
               
               // Supprimer le compte côté serveur et attendre la confirmation
-              console.log('🗑️ Appel de deleteAccount()...');
+              console.log(' Appel de deleteAccount()...');
               const result = await deleteAccount();
-              console.log('🗑️ Résultat de deleteAccount:', result);
+              console.log(' Résultat de deleteAccount:', result);
               
               if (result.success) {
                 // Suppression réussie, déconnexion automatique immédiate
-                console.log('✅ Suppression réussie, déconnexion automatique en cours...');
+                console.log(' Suppression réussie, déconnexion automatique en cours...');
             
             hidePopup();
             showSuccess('Compte supprimé', 'Votre compte a été supprimé avec succès. Vous avez été déconnecté automatiquement.', 6000);
             showToastSuccess('Suppression réussie', 'Redirection vers la page d\'accueil...');
                 
                 // Déconnexion immédiate et redirection
-                console.log('🚪 Déconnexion automatique...');
+                console.log(' Déconnexion automatique...');
                 await logout();
-                console.log('🔄 Redirection vers /login...');
+                console.log(' Redirection vers /login...');
                 
             // Redirection après un délai pour permettre à l'utilisateur de voir le message
                 setTimeout(() => {
@@ -205,7 +205,7 @@ export default function AccountSettingsScreen() {
               } else {
                 // Erreur lors de la suppression
             hidePopup();
-                console.log('❌ Échec de la suppression:', result.message);
+                console.log(' Échec de la suppression:', result.message);
             showError(
                   'Erreur de suppression',
                   result.message || 'Impossible de supprimer le compte de la base de données. Veuillez réessayer.',
@@ -226,7 +226,7 @@ export default function AccountSettingsScreen() {
               }
             } catch (error) {
           hidePopup();
-          console.error('❌ Erreur suppression compte:', error);
+          console.error(' Erreur suppression compte:', error);
           showError(
             'Erreur inattendue',
             'Une erreur inattendue s\'est produite lors de la suppression. Veuillez réessayer.',

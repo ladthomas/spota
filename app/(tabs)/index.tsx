@@ -49,6 +49,7 @@ export default function AccueilScreen() {
     return matchSearch && matchCategory;
   });
 
+  // Toggle favori
   const toggleFavori = (eventId: string) => {
     if (favoris.includes(eventId)) {
       retirerFavori(eventId);

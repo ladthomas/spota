@@ -17,6 +17,10 @@ export default function FavoritesScreen() {
     router.push(`/event/${id}`);
   };
 
+  const handleRemoveFavorite = (eventId: string) => {
+    retirerFavori(eventId);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.header, { color: colors.text }]}>Mes Favoris</Text>
@@ -45,7 +49,7 @@ export default function FavoritesScreen() {
               <TouchableOpacity 
                 onPress={(e) => {
                   e.stopPropagation(); // Éviter de naviguer vers la page détail
-                  retirerFavori(item.id);
+                  handleRemoveFavorite(item.id);
                 }}
               >
                 <Ionicons name="heart" size={26} color="#FFD36F" />
