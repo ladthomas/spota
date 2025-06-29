@@ -3,17 +3,18 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-    FlatList,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useAppContext } from '../../contexts/AppContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import useAuth from '../../hooks/useAuth';
 import { cleanHtmlText } from '../../utils/textHelpers';
 
 const categories = [
@@ -38,6 +39,7 @@ export default function AccueilScreen() {
     rafraichirEvenements 
   } = useAppContext();
   const { theme, colors } = useTheme();
+  const { user, isAuthenticated } = useAuth();
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
@@ -129,7 +131,9 @@ export default function AccueilScreen() {
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <View style={styles.headerTop}>
           <View>
-            <Text style={[styles.greeting, { color: colors.text }]}>Salut ! 👋</Text>
+            <Text style={[styles.greeting, { color: colors.text }]}>
+              {isAuthenticated && user ? `Salut ${user.name} ! 👋` : 'Salut ! 👋'}
+            </Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Que veux-tu faire aujourd'hui ?</Text>
           </View>
           <TouchableOpacity 
