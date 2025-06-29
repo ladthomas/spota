@@ -160,6 +160,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await chargerEvenements();
   };
 
+
+
   const value = {
     evenements,
     favoris,
