@@ -101,16 +101,4 @@ npx expo start
 
 ---
 
-## 📄 Licence
 
-MIT License - Voir le fichier `LICENSE` pour plus de détails.
-
----
-
-<div align="center">
-
-**Développé avec ❤️ pour découvrir Paris autrement**
-
-[🌟 Star le projet](../../stargazers) • [🐛 Reporter un bug](../../issues) • [💡 Suggérer une feature](../../issues)
-
-</div>
