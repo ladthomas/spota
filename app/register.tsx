@@ -4,15 +4,15 @@ import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useRef, useState } from 'react';
 import {
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Dimensions,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import AuthGuard from '../components/AuthGuard';
 import PopupManager from '../components/PopupManager';
@@ -31,6 +31,7 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(true);
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPasswordHints, setShowPasswordHints] = useState(false);
   
   // Refs pour les champs
   const passwordRef = useRef(null);
@@ -53,6 +54,22 @@ export default function RegisterScreen() {
     showInfo: showToastInfo,
     showWarning: showToastWarning,
   } = useToast();
+
+  // Fonction pour valider le mot de passe en temps réel
+  const getPasswordValidation = () => {
+    const hasLength = password.length >= 6;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    
+    return {
+      hasLength,
+      hasUpperCase,
+      hasLowerCase,
+      hasNumbers,
+      isValid: hasLength && hasUpperCase && hasLowerCase && hasNumbers
+    };
+  };
 
   const handleRegister = async () => {
     if (isLoading) return;
@@ -90,14 +107,22 @@ export default function RegisterScreen() {
       return;
     }
     
-    // Validation force du mot de passe
+    // Validation stricte du mot de passe avant envoi
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
     
     if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
-      showToastWarning('Mot de passe faible', 'Utilisez majuscules, minuscules et chiffres');
-      // On continue quand même, c'est juste un avertissement
+      showError(
+        'Mot de passe requis', 
+        'Votre mot de passe doit contenir :\n\n' +
+        '• Au moins 6 caractères\n' +
+        '• Au moins une majuscule (A-Z)\n' +
+        '• Au moins une minuscule (a-z)\n' +
+        '• Au moins un chiffre (0-9)\n\n' +
+        'Exemple : MonMotDePasse123'
+      );
+      return;
     }
 
     if (!confirmPassword) {
@@ -146,7 +171,25 @@ export default function RegisterScreen() {
           router.replace('/(tabs)');
         }, 7000);
       } else {
-        showError('Erreur d\'inscription', response.message);
+        // Vérifier si c'est une erreur de validation du mot de passe
+        if (response.message?.includes('Données de validation invalides') || 
+            response.message?.includes('mot de passe') ||
+            response.message?.includes('majuscule') ||
+            response.message?.includes('minuscule') ||
+            response.message?.includes('chiffre')) {
+          
+          showError(
+            'Mot de passe requis', 
+            'Votre mot de passe doit contenir :\n\n' +
+            '• Au moins 6 caractères\n' +
+            '• Au moins une majuscule (A-Z)\n' +
+            '• Au moins une minuscule (a-z)\n' +
+            '• Au moins un chiffre (0-9)\n\n' +
+            'Exemple : MonMotDePasse123'
+          );
+        } else {
+          showError('Erreur d\'inscription', response.message);
+        }
         showToastError('Échec d\'inscription', 'Vérifiez vos informations');
       }
     } catch (error) {
@@ -246,7 +289,12 @@ export default function RegisterScreen() {
                     placeholder="Mot de passe"
                     placeholderTextColor="#b0b0b0"
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      setShowPasswordHints(text.length > 0);
+                    }}
+                    onFocus={() => setShowPasswordHints(password.length > 0)}
+                    onBlur={() => setShowPasswordHints(false)}
                     secureTextEntry={showPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -269,6 +317,60 @@ export default function RegisterScreen() {
                     />
                   </TouchableOpacity>
                 </View>
+                
+                {/* Indicateur de validation du mot de passe */}
+                {showPasswordHints && (
+                  <View style={styles.passwordHints}>
+                    <Text style={styles.passwordHintsTitle}>Votre mot de passe doit contenir :</Text>
+                    {(() => {
+                      const validation = getPasswordValidation();
+                      return (
+                        <View style={styles.passwordCriteria}>
+                          <View style={styles.criteriaItem}>
+                            <Ionicons 
+                              name={validation.hasLength ? "checkmark-circle" : "close-circle"} 
+                              size={16} 
+                              color={validation.hasLength ? "#4CAF50" : "#FF5252"} 
+                            />
+                            <Text style={[styles.criteriaText, validation.hasLength && styles.criteriaValid]}>
+                              Au moins 6 caractères
+                            </Text>
+                          </View>
+                          <View style={styles.criteriaItem}>
+                            <Ionicons 
+                              name={validation.hasUpperCase ? "checkmark-circle" : "close-circle"} 
+                              size={16} 
+                              color={validation.hasUpperCase ? "#4CAF50" : "#FF5252"} 
+                            />
+                            <Text style={[styles.criteriaText, validation.hasUpperCase && styles.criteriaValid]}>
+                              Une majuscule (A-Z)
+                            </Text>
+                          </View>
+                          <View style={styles.criteriaItem}>
+                            <Ionicons 
+                              name={validation.hasLowerCase ? "checkmark-circle" : "close-circle"} 
+                              size={16} 
+                              color={validation.hasLowerCase ? "#4CAF50" : "#FF5252"} 
+                            />
+                            <Text style={[styles.criteriaText, validation.hasLowerCase && styles.criteriaValid]}>
+                              Une minuscule (a-z)
+                            </Text>
+                          </View>
+                          <View style={styles.criteriaItem}>
+                            <Ionicons 
+                              name={validation.hasNumbers ? "checkmark-circle" : "close-circle"} 
+                              size={16} 
+                              color={validation.hasNumbers ? "#4CAF50" : "#FF5252"} 
+                            />
+                            <Text style={[styles.criteriaText, validation.hasNumbers && styles.criteriaValid]}>
+                              Un chiffre (0-9)
+                            </Text>
+                          </View>
+                        </View>
+                      );
+                    })()}
+                  </View>
+                )}
                 
                 <View style={styles.inputContainer}>
                   <Ionicons name="lock-closed-outline" size={22} color="#b0b0b0" style={styles.inputIcon} />
@@ -502,5 +604,34 @@ const styles = StyleSheet.create({
     color: '#FFD36F',
     fontSize: 16,
     fontWeight: '600',
+  },
+  passwordHints: {
+    backgroundColor: '#2A2730',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#3A3740',
+  },
+  passwordHintsTitle: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  passwordCriteria: {
+    gap: 8,
+  },
+  criteriaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  criteriaText: {
+    color: '#b0b0b0',
+    fontSize: 13,
+  },
+  criteriaValid: {
+    color: '#4CAF50',
   },
 }); 
