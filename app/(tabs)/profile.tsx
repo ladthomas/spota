@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import PopupManager from '../../components/PopupManager';
 import ToastManager from '../../components/ToastManager';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -243,11 +243,11 @@ export default function ProfileScreen() {
 
         {/* Version et infos légales */}
         <View style={styles.footer}>
-          <Image
+         {/* <Image
             source={require('../../assets/images/icon.png')}
             style={styles.footerLogo}
             resizeMode="contain"
-          />
+          /> */}
           <Text style={[styles.versionText, { color: colors.textSecondary }]}>Version 1.0.0 (123)</Text>
           <View style={styles.legalContainer}>
             <TouchableOpacity onPress={handleTemporaryNavigation}>
