@@ -44,6 +44,7 @@ export default function AccountSettingsScreen() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Mettre à jour les informations quand l'utilisateur change
   useEffect(() => {
@@ -75,6 +76,7 @@ export default function AccountSettingsScreen() {
   const handleEditField = (fieldName: string, currentValue: string) => {
     setEditingField(fieldName);
     setEditingValue(currentValue);
+    setValidationError(null); // Réinitialiser l'erreur de validation
   };
 
   const handleSaveField = async () => {
@@ -85,23 +87,78 @@ export default function AccountSettingsScreen() {
       const previousUser = { ...user };
       
       try {
+        // Validation préventive côté frontend
+        if (editingField === 'name') {
+          const nameRegex = /^[a-zA-ZÀ-ÿ\s\-']+$/;
+          const trimmedValue = editingValue.trim();
+          
+          if (trimmedValue.length < 2) {
+            showError(
+              'Nom invalide', 
+              'Le nom doit contenir au moins 2 caractères.'
+            );
+            setIsUpdating(false);
+            return;
+          }
+          
+          if (trimmedValue.length > 100) {
+            showError(
+              'Nom trop long', 
+              'Le nom ne peut pas dépasser 100 caractères.'
+            );
+            setIsUpdating(false);
+            return;
+          }
+          
+          if (!nameRegex.test(trimmedValue)) {
+            showError(
+              'Nom invalide', 
+              'Le nom ne peut contenir que :\n\n' +
+              '• Des lettres (a-z, A-Z)\n' +
+              '• Des lettres accentuées (à, é, ç...)\n' +
+              '• Des espaces\n' +
+              '• Des tirets (-)\n' +
+              '• Des apostrophes (\')\n\n' +
+              'Les chiffres et autres caractères spéciaux ne sont pas autorisés.\n\n' +
+              'Exemples valides : "Marie Dupont", "Jean-Claude", "O\'Connor"'
+            );
+            setIsUpdating(false);
+            return;
+          }
+        }
+
+        // Validation pour l'email  
+        if (editingField === 'email') {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          const trimmedValue = editingValue.trim();
+          
+          if (!emailRegex.test(trimmedValue)) {
+            showError(
+              'Email invalide', 
+              'Veuillez saisir une adresse email valide.\n\nExemple : exemple@email.com'
+            );
+            setIsUpdating(false);
+            return;
+          }
+        }
+
         // Préparer les données à mettre à jour
         const updateData = {
-          [editingField]: editingValue
+          [editingField]: editingValue.trim()
         };
 
-        console.log(' Mise à jour du champ:', editingField, 'avec la valeur:', editingValue);
+        console.log(' Mise à jour du champ:', editingField, 'avec la valeur:', editingValue.trim());
 
         // ✨ OPTIMISTIC UPDATE : Mettre à jour immédiatement l'état local ET global
         const optimisticUser = {
           ...user,
-          [editingField]: editingValue
+          [editingField]: editingValue.trim()
         };
 
         // Mettre à jour l'état local immédiatement
         setAccountInfo(prev => ({
           ...prev,
-          [editingField]: editingValue
+          [editingField]: editingValue.trim()
         }));
 
         // Mettre à jour l'état global immédiatement (optimistic update)
@@ -140,8 +197,24 @@ export default function AccountSettingsScreen() {
             user: previousUser,
           }));
           
-          showError('Erreur de mise à jour', result.message || 'Impossible de mettre à jour les informations');
-          showToastError('Échec de sauvegarde', 'Vérifiez votre connexion');
+          // Vérifier si c'est une erreur de validation du nom
+          if (result.message?.includes('nom ne peut contenir que') || 
+              result.message?.includes('lettres, espaces, tirets et apostrophes')) {
+            showError(
+              'Nom invalide', 
+              'Le nom ne peut contenir que :\n\n' +
+              '• Des lettres (a-z, A-Z)\n' +
+              '• Des lettres accentuées (à, é, ç...)\n' +
+              '• Des espaces\n' +
+              '• Des tirets (-)\n' +
+              '• Des apostrophes (\')\n\n' +
+              'Les chiffres et autres caractères spéciaux ne sont pas autorisés.\n\n' +
+              'Exemples valides : "Marie Dupont", "Jean-Claude", "O\'Connor"'
+            );
+          } else {
+            showError('Erreur de mise à jour', result.message || 'Impossible de mettre à jour les informations');
+          }
+          showToastError('Échec de sauvegarde', 'Vérifiez vos informations');
         }
       } catch (error) {
         // Erreur réseau, revenir à l'état précédent
@@ -260,6 +333,48 @@ export default function AccountSettingsScreen() {
     return labels[fieldName] || fieldName;
   };
 
+  // Fonction pour valider en temps réel
+  const validateInput = (value: string, fieldName: string): string | null => {
+    const trimmedValue = value.trim();
+    
+    if (fieldName === 'name') {
+      if (trimmedValue.length === 0) {
+        return null; // Pas d'erreur si vide
+      }
+      if (trimmedValue.length < 2) {
+        return 'Le nom doit contenir au moins 2 caractères';
+      }
+      if (trimmedValue.length > 100) {
+        return 'Le nom ne peut pas dépasser 100 caractères';
+      }
+      const nameRegex = /^[a-zA-ZÀ-ÿ\s\-']+$/;
+      if (!nameRegex.test(trimmedValue)) {
+        return 'Seules les lettres, espaces, tirets et apostrophes sont autorisés';
+      }
+    }
+    
+    if (fieldName === 'email') {
+      if (trimmedValue.length === 0) {
+        return null; // Pas d'erreur si vide
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedValue)) {
+        return 'Format d\'email invalide';
+      }
+    }
+    
+    return null;
+  };
+
+  // Gérer le changement de texte avec validation
+  const handleTextChange = (text: string) => {
+    setEditingValue(text);
+    if (editingField) {
+      const error = validateInput(text, editingField);
+      setValidationError(error);
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
@@ -356,8 +471,8 @@ export default function AccountSettingsScreen() {
                   }]}>Annuler</Text>
                 </TouchableOpacity>
                 <View style={{ flex: 1 }} />
-                <TouchableOpacity onPress={handleSaveField} disabled={isUpdating}>
-                  <Text style={[styles.modalSave, { opacity: isUpdating ? 0.5 : 1 }]}>
+                <TouchableOpacity onPress={handleSaveField} disabled={isUpdating || !!validationError}>
+                  <Text style={[styles.modalSave, { opacity: (isUpdating || !!validationError) ? 0.5 : 1 }]}>
                     {isUpdating ? 'Sauvegarde...' : 'Enregistrer'}
                   </Text>
                 </TouchableOpacity>
@@ -371,10 +486,11 @@ export default function AccountSettingsScreen() {
                   style={[styles.textInput, { 
                     backgroundColor: theme === 'dark' ? '#2C2C2E' : '#F2F2F7', 
                     color: theme === 'dark' ? '#FFFFFF' : '#000000',
-                    borderColor: theme === 'dark' ? '#48484A' : '#C7C7CC'
+                    borderColor: validationError ? '#FF6B6B' : (theme === 'dark' ? '#48484A' : '#C7C7CC'),
+                    borderWidth: validationError ? 2 : 1
                   }]}
                   value={editingValue}
-                  onChangeText={setEditingValue}
+                  onChangeText={handleTextChange}
                   placeholder={`Entrez votre ${editingField && getFieldLabel(editingField).toLowerCase()}`}
                   placeholderTextColor={theme === 'dark' ? '#8E8E93' : '#8E8E93'}
                   keyboardType={editingField === 'email' ? 'email-address' : 'default'}
@@ -383,6 +499,23 @@ export default function AccountSettingsScreen() {
                   selectionColor={theme === 'dark' ? '#FFD36F' : '#007AFF'}
                   editable={!isUpdating}
                 />
+                
+                {/* Afficher les erreurs de validation */}
+                {validationError && (
+                  <View style={styles.validationContainer}>
+                    <Ionicons name="warning-outline" size={16} color="#FF6B6B" />
+                    <Text style={styles.validationText}>{validationError}</Text>
+                  </View>
+                )}
+                
+                {/* Afficher les règles pour le nom */}
+                {editingField === 'name' && !validationError && editingValue.length > 0 && (
+                  <View style={styles.hintsContainer}>
+                    <Text style={styles.hintsText}>
+                      ✓ Lettres, espaces, tirets et apostrophes uniquement
+                    </Text>
+                  </View>
+                )}
               </View>
             </TouchableOpacity>
           </TouchableOpacity>
@@ -546,5 +679,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 50,
     fontWeight: '500',
+  },
+  validationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  validationText: {
+    color: '#FF6B6B',
+    fontSize: 14,
+    marginLeft: 6,
+    flex: 1,
+  },
+  hintsContainer: {
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  hintsText: {
+    color: '#4CAF50',
+    fontSize: 14,
+    fontStyle: 'italic',
   },
 }); 
