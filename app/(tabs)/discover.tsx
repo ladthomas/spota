@@ -75,13 +75,13 @@ export default function DiscussionScreen() {
             </View>
           </View>
           
-          {/* Microphone flottant */}
+          {/* Microphone flottant 
           <View style={styles.microphoneContainer}>
             <View style={styles.microphoneButton}>
               <Ionicons name="mic" size={20} color="#fff" />
             </View>
-          </View>
-        </View>
+          </View>*/}
+        </View> 
 
         {/* Textes informatifs */}
         <Text style={[styles.mainText, { color: colors.text }]}>C'est calme ici</Text>
