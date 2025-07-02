@@ -2,7 +2,7 @@
 
 > **Votre compagnon culturel parisien**
 
-Spota est une application mobile moderne développée avec React Native et Expo. Elle permet aux utilisateurs de découvrir, explorer et organiser les événements qui rythment la vie parisienne, en temps réel. Grâce à une interface fluide, une carte interactive et une intégration météo, Spota devient votre compagnon culturel du quotidien.
+Spota est une application mobile moderne développée avec React Native et Expo. Elle permet aux utilisateurs de découvrir, explorer et organiser les événements qui rythment la vie parisienne, en temps réel. Grâce à une interface fluide, une carte interactive, Spota devient votre compagnon culturel du quotidien.
 
 ---
 
