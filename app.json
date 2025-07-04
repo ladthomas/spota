@@ -15,7 +15,7 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Spota utilise votre localisation pour vous montrer les événements près de vous."
       },
       "config": {
-        "googleMapsApiKey": "AIzaSyC8KbVqEXAJErTOTFi88bocySJOl5OeVEs"
+        "googleMapsApiKey": ""
       },
       "bundleIdentifier": "com.anonymous.Spota"
     },
@@ -27,7 +27,7 @@
       "edgeToEdgeEnabled": true,
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyC8KbVqEXAJErTOTFi88bocySJOl5OeVEs"
+          "apiKey": ""
         }
       },
       "permissions": [
